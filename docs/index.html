@@ -292,6 +292,18 @@
   dialog.measure { visibility: hidden; animation: none !important; }
   dialog.measure::backdrop { opacity: 0; }
 
+
+  /* 아래 탭 바 (아이폰 앱처럼): 책장 / 달력 */
+  body { padding-bottom: calc(56px + env(safe-area-inset-bottom)); }
+  .tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: flex; justify-content: center;
+    padding-bottom: env(safe-area-inset-bottom); background: var(--bar); border-top: .5px solid var(--line);
+    -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); }
+  .tabbar button { flex: 0 1 160px; height: 52px; border: 0; background: none; cursor: pointer; color: var(--muted);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 10.5px; font-weight: 500; }
+  .tabbar svg { width: 26px; height: 26px; }
+  .tabbar button[aria-selected="true"] { color: var(--accent); }
+  body.tab-calendar .controls, body.tab-calendar .chips { display: none; }
+
   footer .wrap { padding-top: 8px; padding-bottom: calc(32px + env(safe-area-inset-bottom)); color: var(--muted); font-size: 12px; text-align: center; line-height: 1.6; }
   footer a { color: var(--accent); text-decoration: none; }
   .empty { color: var(--muted); padding: 60px 16px; text-align: center; }
@@ -330,6 +342,12 @@
   <!-- YES24 API 이용 조건. 화면에 출처를 표시하고 상품 페이지로 가는 링크를 둔다. 지우지 말 것 -->
   도서 정보와 표지 제공 <a href="https://www.yes24.com" target="_blank" rel="noopener">YES24</a><br><span id="updated"></span>
 </div></footer>
+<nav class="tabbar" role="tablist" aria-label="화면">
+  <button type="button" role="tab" data-tab="shelf" aria-selected="true">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3.5" width="4" height="16" rx="1"/><rect x="9.5" y="5.5" width="4" height="14" rx="1"/><path d="m15.3 6.4 3.6-.9 3.3 13.4-3.6.9z"/><path d="M2.5 20.5h19"/></svg>책장</button>
+  <button type="button" role="tab" data-tab="calendar" aria-selected="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/><circle cx="8.5" cy="14.5" r=".6" fill="currentColor"/><circle cx="12" cy="14.5" r=".6" fill="currentColor"/><circle cx="15.5" cy="14.5" r=".6" fill="currentColor"/></svg>달력</button>
+</nav>
 <script>
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -337,12 +355,13 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 const sized = (url, size) => /image\.yes24\.com\/goods\/\d+\/[A-Z]+$/.test(url || '') ? url.replace(/\/[A-Z]+$/, '/' + size) : url;
 const CHEV = '<svg class="chev" viewBox="0 0 8 13" aria-hidden="true"><path d="M1.5 1.5 6.5 6.5 1.5 11.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 let BOOKS = [];
+let SHELF_TITLE = '나의 책장';
 let GOAL = 0;
 const isRead = b => !b.status || b.status === 'read';
 const starsHtml = n => n ? `<span class="stars" aria-label="별점 ${n}점">${'★'.repeat(n)}<span class="off">${'★'.repeat(5 - n)}</span></span>` : '';
 // 보기 방식은 방문자 브라우저에 기억해 둔다 (안 되면 그냥 기본값)
 const store = { get(k, d) { try { return localStorage.getItem(k) || d; } catch { return d; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
-const state = { filter: 'all', cat: '', calYear: 0 };   // cat: 고른 분류(빈 값이면 전체), calYear: 달력에서 보는 해
+const state = { filter: 'all', cat: '', calYear: 0, tab: location.hash === '#calendar' ? 'calendar' : 'shelf' };   // cat: 고른 분류(빈 값이면 전체), calYear: 달력에서 보는 해
 const REDUCE = matchMedia('(prefers-reduced-motion: reduce)');
 
 function coverHtml(b, size) {
@@ -388,6 +407,15 @@ function statsHtml() {
 function render() {
   document.querySelectorAll('[data-filter]').forEach(el => el.setAttribute('aria-pressed', el.dataset.filter === state.filter));
   if (!BOOKS.length) { $('#shelf').innerHTML = '<p class="empty">아직 꽂힌 책이 없어요.</p>'; return; }
+  // 탭: 책장 / 달력
+  document.body.classList.toggle('tab-calendar', state.tab === 'calendar');
+  document.querySelectorAll('[data-tab]').forEach(el => el.setAttribute('aria-selected', el.dataset.tab === state.tab));
+  $('#title').textContent = state.tab === 'calendar' ? '독서 달력' : SHELF_TITLE;
+  $('#smallTitle').textContent = $('#title').textContent;
+  if (state.tab === 'calendar') {
+    $('#shelf').innerHTML = calendarHtml() || '<p class="empty">다 읽은 책이 생기면 달력에 쌓여요.</p>';
+    return;
+  }
   renderChips();
   const fav = state.filter === 'fav';
   const pick = list => list.filter(b => (!fav || b.fav) && (!state.cat || (b.category || '기타') === state.cat));
@@ -395,7 +423,7 @@ function render() {
   const want = pick(BOOKS.filter(b => b.status === 'want'));
   const done = pick(BOOKS.filter(isRead));
   // 고른 게 있으면 독서 현황·결산·달력은 숨긴다
-  let html = fav || state.cat ? '' : statsHtml() + wrappedCtaHtml() + calendarHtml();
+  let html = fav || state.cat ? '' : statsHtml() + wrappedCtaHtml();
 
   // 읽는 중 · 읽고 싶은 책 · 다 읽은 책(해마다) 을 각각 한 칸의 책장으로
   if (reading.length) html += `<section class="section"><h2>읽는 중 · ${reading.length}권</h2>${shelfHtml(reading)}</section>`;
@@ -528,7 +556,7 @@ function calendarHtml() {
         `<button class="mbook" data-id="${b.id}" style="--i:${k}" title="${esc(b.title)}" aria-label="${esc(b.title)}">${coverHtml(b, 'L')}</button>`).join('')
         + (list.length > 3 ? `<span class="more">+${list.length - 3}</span>` : '') : (future ? '' : '<span class="mempty"></span>')}</div></div>`;
   }).join('');
-  return `<section class="section"><div class="cal-head"><h2>독서 달력</h2>${years.length > 1
+  return `<section class="section"><div class="cal-head"><h2>${y}년 · ${inYear.length}권</h2>${years.length > 1
       ? `<div class="years">${years.map(v => `<button type="button" data-year="${v}" aria-pressed="${v === y}">${v}</button>`).join('')}</div>` : ''}</div>
     <div class="cal">${tiles}</div>${unknown ? `<p class="cal-note">읽은 달을 적지 않은 책 ${unknown}권은 달력에 없어요.</p>` : ''}</section>`;
 }
@@ -628,6 +656,15 @@ $('#shelf').addEventListener('click', e => {
   const el = e.target.closest('[data-id]'); if (el) openBook(Number(el.dataset.id), el.querySelector('img, .nocover'));
 });
 $('#dlg').addEventListener('click', e => { if (e.target.id === 'dlg') closeBook(); });   // 바깥을 누르면 닫힘
+// 탭 바꾸기. 주소 끝(#calendar)에도 남겨서 뒤로 가기·공유가 되게 한다
+function setTab(tab) {
+  if (tab === state.tab) { window.scrollTo({ top: 0, behavior: REDUCE.matches ? 'auto' : 'smooth' }); return; }
+  state.tab = tab;
+  history.pushState(null, '', tab === 'calendar' ? '#calendar' : location.pathname + location.search);
+  render(); window.scrollTo(0, 0);
+}
+document.querySelectorAll('[data-tab]').forEach(el => el.addEventListener('click', () => setTab(el.dataset.tab)));
+window.addEventListener('popstate', () => { state.tab = location.hash === '#calendar' ? 'calendar' : 'shelf'; render(); });
 $('#dlg').addEventListener('cancel', e => { e.preventDefault(); closeBook(); });          // Esc 키
 $('#chips').addEventListener('click', e => { const el = e.target.closest('[data-cat]'); if (el) { state.cat = el.dataset.cat; render(); } });
 document.querySelectorAll('[data-filter]').forEach(el => el.addEventListener('click', () => { state.filter = el.dataset.filter; render(); }));
@@ -641,7 +678,7 @@ window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
 fetch('shelf.json?t=' + Date.now()).then(r => r.json()).then(data => {
   const shelf = data.shelf || {};
   const title = shelf.title || '나의 책장';
-  document.title = title; $('#title').textContent = title; $('#smallTitle').textContent = title;
+  document.title = title; SHELF_TITLE = title;
   BOOKS = data.books || [];
   GOAL = Number(shelf.goal) || 0;
   $('#owner').textContent = (shelf.owner ? `${shelf.owner} · ` : '') + `읽은 책 ${BOOKS.filter(isRead).length}권`;
