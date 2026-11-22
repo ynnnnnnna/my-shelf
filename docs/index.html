@@ -194,6 +194,52 @@
   .pill.want { background: rgba(118,118,128,.14); color: var(--muted); }
   .hero .prog { width: 200px; margin: 10px auto 0; }
 
+
+  /* 책장: 나무 선반 위에 표지가 서 있다. 줄 높이를 고정해서 선반을 배경 무늬로 그린다 */
+  :root {
+    --cover-h: 168px;       /* 표지 높이. 키우면 책이 커진다 */
+    --plank: 20px;          /* 선반 두께 */
+    --row-h: calc(var(--cover-h) + var(--plank) + 22px);
+    --wood-top: #e3c7a0; --wood-front: #c79c6b; --wood-edge: #a97d4f;
+    --shelf-back: #f7f2ea;  /* 책장 안쪽 벽 */
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --wood-top: #7a5a3c; --wood-front: #5c4229; --wood-edge: #47321f; --shelf-back: #1d1a16; }
+  }
+  .bookcase { background: var(--shelf-back); border-radius: var(--radius); overflow: hidden;
+    box-shadow: inset 0 0 0 .5px var(--line); }
+  .shelf {
+    display: flex; flex-wrap: wrap; align-content: flex-start; padding: 0 14px;
+    background: repeating-linear-gradient(to bottom,
+      rgba(0,0,0,.07) 0, transparent 8px,                                        /* 위 선반이 드리운 그림자 */
+      transparent calc(var(--row-h) - var(--plank)),
+      var(--wood-top) calc(var(--row-h) - var(--plank)),                         /* 선반 윗면 */
+      var(--wood-top) calc(var(--row-h) - var(--plank) + 6px),
+      var(--wood-front) calc(var(--row-h) - var(--plank) + 6px),                 /* 선반 앞면 */
+      var(--wood-front) calc(var(--row-h) - 3px),
+      var(--wood-edge) calc(var(--row-h) - 3px), var(--wood-edge) var(--row-h)); /* 앞면 아래 모서리 */
+  }
+  .slot { height: var(--row-h); display: flex; align-items: flex-end; padding: 0 9px calc(var(--plank) - 5px); }
+  .slot .book { position: relative; display: block; }
+  .slot .book img, .slot .book .nocover { height: var(--cover-h); width: calc(var(--cover-h) * .68); object-fit: cover; background: rgba(127,127,127,.15); border-radius: 2px 4px 4px 2px;
+    box-shadow: inset 3px 0 4px rgba(0,0,0,.12), 2px 0 3px rgba(0,0,0,.18), 6px 4px 10px rgba(0,0,0,.18); }
+  .chip { white-space: nowrap; }
+  .slot .book::after { content: ""; position: absolute; left: 4px; top: 0; bottom: 0; width: 2px; background: rgba(255,255,255,.18); border-radius: 1px; pointer-events: none; } /* 책등 접힌 선 */
+  .slot .book:hover { transform: translateY(-6px); }
+  .slot .book:active { transform: translateY(-3px) scale(.98); }
+  .chip { position: absolute; left: 6px; bottom: 6px; padding: 2px 6px; border-radius: 99px; font-size: 10.5px; font-weight: 600;
+    background: rgba(0,0,0,.62); color: #fff; -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); line-height: 1.4; }
+  .chip.star { color: #ffcc4d; }
+  .cover-prog { position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: rgba(0,0,0,.35); border-radius: 0 0 4px 2px; overflow: hidden; }
+  .cover-prog i { display: block; height: 100%; background: var(--accent); }
+  .shelf-empty { height: var(--row-h); display: flex; align-items: center; padding: 0 9px var(--plank); color: var(--muted); font-size: 14px; }
+  @media (max-width: 600px) {
+    :root { --cover-h: 122px; --plank: 16px; --row-h: calc(var(--cover-h) + var(--plank) + 18px); }
+    .shelf { padding: 0 8px; }
+    .slot { padding: 0 6px calc(var(--plank) - 4px); }
+    .chip { font-size: 9.5px; left: 4px; bottom: 5px; padding: 1px 5px; }
+  }
+
   footer .wrap { padding-top: 8px; padding-bottom: calc(32px + env(safe-area-inset-bottom)); color: var(--muted); font-size: 12px; text-align: center; line-height: 1.6; }
   footer a { color: var(--accent); text-decoration: none; }
   .empty { color: var(--muted); padding: 60px 16px; text-align: center; }
@@ -216,10 +262,6 @@
   <h1 id="title">나의 책장</h1>
   <p class="owner" id="owner"></p>
   <div class="controls">
-    <div class="seg" role="group" aria-label="보기 방식">
-      <button type="button" data-view="grid" aria-pressed="true">표지</button>
-      <button type="button" data-view="list" aria-pressed="false">목록</button>
-    </div>
     <div class="seg" role="group" aria-label="고르기">
       <button type="button" data-filter="all" aria-pressed="true">전체</button>
       <button type="button" data-filter="fav" aria-pressed="false">♥ 추천</button>
@@ -247,7 +289,7 @@ const isRead = b => !b.status || b.status === 'read';
 const starsHtml = n => n ? `<span class="stars" aria-label="별점 ${n}점">${'★'.repeat(n)}<span class="off">${'★'.repeat(5 - n)}</span></span>` : '';
 // 보기 방식은 방문자 브라우저에 기억해 둔다 (안 되면 그냥 기본값)
 const store = { get(k, d) { try { return localStorage.getItem(k) || d; } catch { return d; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
-const state = { view: store.get('shelf.view', 'grid'), filter: 'all' };
+const state = { filter: 'all' };
 
 function coverHtml(b, size) {
   return b.cover
@@ -255,17 +297,16 @@ function coverHtml(b, size) {
     : `<div class="nocover"><b>${esc(b.title)}</b><span>${esc(b.author)}</span></div>`;
 }
 
-function bookBtn(b) {
-  return `<button class="book" data-id="${b.id}">
-    <div class="cv">${coverHtml(b, 'L')}${b.fav ? '<span class="badge" aria-label="추천">♥</span>' : ''}</div>
-    <div class="t">${esc(b.title)}</div><div class="a">${esc(b.author)}</div>${b.rating ? `<div class="r">${starsHtml(b.rating)}</div>` : ''}</button>`;
+// 책 한 권 = 선반 위 한 칸. 제목은 표지 위 글자 대신 마우스를 올리면 나오고, 누르면 상세가 열린다
+function slotHtml(b) {
+  const chip = b.status === 'reading' ? `<span class="chip">${b.progress || 0}%</span>`
+    : b.rating ? `<span class="chip star">★ ${b.rating}</span>` : '';
+  return `<div class="slot"><button class="book" data-id="${b.id}" title="${esc(b.title)} · ${esc(b.author)}" aria-label="${esc(b.title)}">
+    ${coverHtml(b, 'L')}${b.fav ? '<span class="badge" aria-label="추천">♥</span>' : ''}${chip}
+    ${b.status === 'reading' ? `<span class="cover-prog"><i style="width:${b.progress || 0}%"></i></span>` : ''}
+  </button></div>`;
 }
-function rowBtn(b, sub) {
-  return `<button class="row" data-id="${b.id}">
-    <div class="thumb">${coverHtml(b, 'L')}</div>
-    <div class="txt"><div class="t">${esc(b.title)}</div>${sub}</div>
-    ${b.fav ? '<span class="heart" aria-label="추천">♥</span>' : ''}${CHEV}</button>`;
-}
+const shelfHtml = list => `<div class="bookcase"><div class="shelf">${list.map(slotHtml).join('')}</div></div>`;
 
 // ① 올해 독서 현황: 목표 링 + 월별 막대 (다 읽은 책만 센다)
 function statsHtml() {
@@ -302,7 +343,6 @@ function statsHtml() {
 }
 
 function render() {
-  document.querySelectorAll('[data-view]').forEach(el => el.setAttribute('aria-pressed', el.dataset.view === state.view));
   document.querySelectorAll('[data-filter]').forEach(el => el.setAttribute('aria-pressed', el.dataset.filter === state.filter));
   if (!BOOKS.length) { $('#shelf').innerHTML = '<p class="empty">아직 꽂힌 책이 없어요.</p>'; return; }
   const fav = state.filter === 'fav';
@@ -312,21 +352,13 @@ function render() {
   const done = pick(BOOKS.filter(isRead));
   let html = fav ? '' : statsHtml();
 
-  // ⑤ 읽는 중 (진행 막대) · 읽고 싶은 책 (가로로 넘기기)
-  if (reading.length) html += `<section class="section"><h2>읽는 중 · ${reading.length}권</h2><div class="card">${
-    reading.map(b => rowBtn(b, `<div class="a">${esc(b.author)}</div><div class="prog"><i style="width:${b.progress || 0}%"></i></div><div class="pct">${b.progress || 0}% 읽음</div>`)).join('')}</div></section>`;
-  if (want.length) html += `<section class="section"><h2>읽고 싶은 책 · ${want.length}권</h2><div class="card">${
-    state.view === 'grid' ? `<div class="hscroll">${want.map(bookBtn).join('')}</div>`
-      : want.map(b => rowBtn(b, `<div class="a">${esc(b.author)}</div>`)).join('')}</div></section>`;
-
-  // 다 읽은 책: 읽은 해로 묶는다. shelf.json 이 이미 최근 순으로 정렬돼 있다
-  const years = [...new Set(done.map(b => b.year))];
+  // 읽는 중 · 읽고 싶은 책 · 다 읽은 책(해마다) 을 각각 한 칸의 책장으로
+  if (reading.length) html += `<section class="section"><h2>읽는 중 · ${reading.length}권</h2>${shelfHtml(reading)}</section>`;
+  if (want.length) html += `<section class="section"><h2>읽고 싶은 책 · ${want.length}권</h2>${shelfHtml(want)}</section>`;
+  const years = [...new Set(done.map(b => b.year))];   // shelf.json 이 이미 최근 순으로 정렬돼 있다
   html += years.map(y => {
     const list = done.filter(b => b.year === y);
-    const body = state.view === 'grid'
-      ? `<div class="grid">${list.map(bookBtn).join('')}</div>`
-      : list.map(b => rowBtn(b, `<div class="a">${esc([b.author, b.month ? b.month + '월' : ''].filter(Boolean).join(' · '))}${b.rating ? ' · ' + starsHtml(b.rating) : ''}</div>`)).join('');
-    return `<section class="section"><h2>${esc(y)}년 · ${list.length}권</h2><div class="card">${body}</div></section>`;
+    return `<section class="section"><h2>${esc(y)}년 · ${list.length}권</h2>${shelfHtml(list)}</section>`;
   }).join('');
   if (fav && !reading.length && !want.length && !done.length) html = '<p class="empty">추천 표시(♥)한 책이 아직 없어요.</p>';
   $('#shelf').innerHTML = html;
@@ -379,7 +411,6 @@ function openBook(id) {
 
 $('#shelf').addEventListener('click', e => { const el = e.target.closest('[data-id]'); if (el) openBook(Number(el.dataset.id)); });
 $('#dlg').addEventListener('click', e => { if (e.target.id === 'dlg') $('#dlg').close(); });   // 바깥을 누르면 닫힘
-document.querySelectorAll('[data-view]').forEach(el => el.addEventListener('click', () => { state.view = el.dataset.view; store.set('shelf.view', state.view); render(); }));
 document.querySelectorAll('[data-filter]').forEach(el => el.addEventListener('click', () => { state.filter = el.dataset.filter; render(); }));
 
 $('#shelf').addEventListener('pointerover', e => { const b = e.target.closest('.bar'); if (b) showTip(b); });
