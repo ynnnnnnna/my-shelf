@@ -56,6 +56,10 @@
   .item img, .item .ph { width: 40px; height: 58px; object-fit: cover; background: #eee; border-radius: 2px; }
   .item b { font-weight: 600; }
   .sample { font-size: 11px; color: var(--accent); border: 1px solid var(--accent); border-radius: 4px; padding: 0 4px; margin-left: 4px; }
+  .stars { color: #e0a100; font-size: 12px; letter-spacing: 1px; }
+  .st { font-size: 11px; border-radius: 4px; padding: 0 5px; margin-left: 4px; }
+  .st.reading { color: #fff; background: #007aff; }
+  .st.want { color: #555; border: 1px solid #bbb; }
   .guide { line-height: 1.7; }
   .guide pre { background: #1d1d1b; color: #f4f2ec; padding: 12px 14px; border-radius: 8px; overflow-x: auto; font-size: 13px; }
   .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 10px 18px; border-radius: 8px; opacity: 0; transition: opacity .2s; pointer-events: none; max-width: 90vw; }
@@ -102,6 +106,7 @@
     <div class="row" style="margin-bottom:12px">
       <input type="text" id="shelfTitle" placeholder="책장 이름" style="flex:2">
       <input type="text" id="shelfOwner" placeholder="책장 주인 (선택)" style="flex:1.4">
+      <input type="number" id="shelfGoal" placeholder="올해 목표 권수" min="0" max="999" style="flex:1" title="사이트 맨 위 '올해 독서 현황' 링에 쓰여요">
       <button class="btn small" id="saveShelf">저장</button>
     </div>
     <div class="list" id="list"></div>
@@ -140,6 +145,10 @@ async function api(path, opt = {}) {
   return data;
 }
 
+const STATUS_LABEL = { read: '다 읽음', reading: '읽는 중', want: '읽고 싶은 책' };
+const statusTag = b => b.status === 'reading' ? ` <span class="st reading">읽는 중 ${b.progress || 0}%</span>`
+  : b.status === 'want' ? ' <span class="st want">읽고 싶은 책</span>' : '';
+
 // ── 내 책 목록 ──
 async function load() {
   STATE = await api('/api/books');
@@ -149,11 +158,11 @@ async function load() {
   $('#pubState').textContent = STATE.unpublished ? '게시하지 않은 변경 있음' : '게시됨';
   $('#pubState').className = 'badge' + (STATE.unpublished ? ' need' : '');
   $('#count').textContent = STATE.books.length + '권';
-  $('#shelfTitle').value = STATE.shelf?.title || ''; $('#shelfOwner').value = STATE.shelf?.owner || '';
+  $('#shelfTitle').value = STATE.shelf?.title || ''; $('#shelfOwner').value = STATE.shelf?.owner || ''; $('#shelfGoal').value = STATE.shelf?.goal || '';
   const books = [...STATE.books].sort((a, b) => (b.year - a.year) || ((b.month || 0) - (a.month || 0)) || (b.id - a.id));
   $('#list').innerHTML = books.map(b => `<div class="item">
       ${b.cover ? `<img src="${esc(b.cover)}" alt="">` : '<div class="ph"></div>'}
-      <div><b>${esc(b.title)}</b>${b.sample ? '<span class="sample">샘플</span>' : ''}${b.fav ? ' <span style="color:var(--accent)">♥</span>' : ''}
+      <div><b>${esc(b.title)}</b>${b.sample ? '<span class="sample">샘플</span>' : ''}${b.fav ? ' <span style="color:var(--accent)">♥</span>' : ''}${statusTag(b)}${b.rating ? ` <span class="stars">${'★'.repeat(b.rating)}</span>` : ''}
         <div class="muted">${esc([b.author, `${b.year}${b.month ? '.' + b.month : ''}`, b.category].filter(Boolean).join(' · '))}</div></div>
       <div class="row"><button class="btn small" data-edit="${b.id}">고치기</button><button class="btn small" data-del="${b.id}">빼기</button></div>
     </div>`).join('') || '<p class="muted">아직 꽂힌 책이 없어요.</p>';
@@ -191,6 +200,12 @@ function showForm(book, id = null) {
         <div><label>읽은 달</label><input type="number" id="f_month" min="0" max="12" value="${esc(b.month || '')}" placeholder="모름"></div>
         <div><label>분류</label><select id="f_category">${STATE.categories.map(c => `<option ${c === b.category ? 'selected' : ''}>${c}</option>`).join('')}</select></div>
       </div>
+      <div class="grid2">
+        <div><label>읽기 상태</label><select id="f_status">${Object.entries(STATUS_LABEL).map(([k, t]) => `<option value="${k}" ${k === (b.status || 'read') ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
+        <div id="progWrap"><label>진행률 (%)</label><input type="number" id="f_progress" min="0" max="100" value="${esc(b.progress ?? '')}" placeholder="0~100"></div>
+        <div><label>별점</label><select id="f_rating"><option value="0">없음</option>${[5,4,3,2,1].map(n => `<option value="${n}" ${n === b.rating ? 'selected' : ''}>${'★'.repeat(n)}${'☆'.repeat(5 - n)}</option>`).join('')}</select></div>
+      </div>
+      <p class="muted" style="margin:6px 0 0">읽는 중·읽고 싶은 책은 '읽은 해·달'에 시작한(담은) 때를 적어 주세요. 올해 독서 현황에는 '다 읽음'만 세요.</p>
       <label><input type="checkbox" id="f_fav" ${b.fav ? 'checked' : ''}> ♥ 추천하는 책</label>
       <label>한줄평</label><textarea id="f_review" placeholder="이 책을 한 문장으로">${esc(b.review || '')}</textarea>
       <label>좋아하는 구절 (선택)</label><textarea id="f_quote" placeholder="짧게. 책 문장을 길게 옮기면 저작권 문제가 생길 수 있어요">${esc(b.quote || '')}</textarea>
@@ -199,6 +214,8 @@ function showForm(book, id = null) {
         <button class="btn" id="cancelBook">취소</button>
       </div>
     </div></div>`;
+  const syncProg = () => { $('#progWrap').style.visibility = $('#f_status').value === 'reading' ? 'visible' : 'hidden'; };
+  $('#f_status').onchange = syncProg; syncProg();
   $('#saveBook').onclick = () => saveBook(b);
   $('#cancelBook').onclick = () => { editing = null; $('#formTitle').textContent = '2. 책장에 꽂기'; $('#formArea').innerHTML = '<p class="muted">왼쪽에서 책을 찾아 표지를 누르면 여기에 입력 칸이 열려요.</p>'; };
 }
@@ -206,7 +223,8 @@ function showForm(book, id = null) {
 async function saveBook(base) {
   const v = id => $('#' + id)?.value;
   const body = { ...base, year: v('f_year'), month: v('f_month'), category: v('f_category'),
-    fav: $('#f_fav').checked, review: v('f_review'), quote: v('f_quote') };
+    fav: $('#f_fav').checked, review: v('f_review'), quote: v('f_quote'),
+    status: v('f_status'), progress: v('f_progress'), rating: v('f_rating') };
   if ($('#f_title')) Object.assign(body, { title: v('f_title'), author: v('f_author'), publisher: v('f_publisher') });
   try {
     if (editing) await api('/api/books/' + editing, { method: 'PUT', body });
@@ -236,8 +254,8 @@ $('#list').onclick = async e => {
   }
 };
 $('#saveShelf').onclick = async () => {
-  await api('/api/shelf', { method: 'POST', body: { title: $('#shelfTitle').value, owner: $('#shelfOwner').value } });
-  toast('책장 이름을 저장했어요'); load();
+  await api('/api/shelf', { method: 'POST', body: { title: $('#shelfTitle').value, owner: $('#shelfOwner').value, goal: $('#shelfGoal').value } });
+  toast('책장 설정을 저장했어요'); load();
 };
 $('#clearSamples').onclick = async () => {
   if (!confirm('샘플 책을 모두 뺄까요? 내가 꽂은 책과 고친 샘플은 남아요.')) return;

@@ -1,7 +1,8 @@
 {
   "shelf": {
     "title": "나의 책장",
-    "owner": ""
+    "owner": "",
+    "goal": 20
   },
   "books": [
     {
@@ -20,7 +21,10 @@
       "review": "",
       "quote": "",
       "id": 1,
-      "addedAt": "2026-11-22"
+      "addedAt": "2026-11-22",
+      "status": "reading",
+      "progress": 0,
+      "rating": null
     },
     {
       "title": "오만과 편견",
@@ -146,7 +150,10 @@
       "review": "",
       "quote": "",
       "id": 8,
-      "addedAt": "2026-11-22"
+      "addedAt": "2026-11-22",
+      "status": "read",
+      "progress": null,
+      "rating": null
     }
   ]
 }

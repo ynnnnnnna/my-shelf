@@ -149,7 +149,21 @@ def search(q):
 # ───────────────────────────── ③ 기록 다루기 ─────────────────────────────
 # 기록 한 권에 들어가는 칸. 어드민 입력 화면과 사이트가 이 이름을 같이 쓴다.
 FIELDS = ["title", "author", "publisher", "cover", "link", "yes24Id", "isbn13", "media",
-          "year", "month", "category", "fav", "review", "quote"]
+          "year", "month", "category", "fav", "review", "quote",
+          "status", "progress", "rating"]
+# 사이트(shelf.json)로 내보내는 칸. 게시와 '게시하지 않은 변경' 알림이 같이 쓴다
+PUBLIC = ["id", "title", "author", "publisher", "cover", "link", "media",
+          "year", "month", "category", "fav", "review", "quote",
+          "status", "progress", "rating"]
+# 읽기 상태: 다 읽음 / 읽는 중 / 읽고 싶은 책. 예전 기록에는 이 칸이 없으니 '다 읽음'으로 본다
+STATUSES = ["read", "reading", "want"]
+
+
+def to_int(v, lo, hi):
+    try:
+        return max(lo, min(hi, int(v)))
+    except (TypeError, ValueError):
+        return 0
 
 
 def clean_book(data, old=None):
@@ -164,6 +178,9 @@ def clean_book(data, old=None):
     book["year"] = int(book.get("year") or today.year)
     book["month"] = int(book.get("month") or 0) or None
     book["fav"] = bool(book.get("fav"))
+    book["status"] = book.get("status") if book.get("status") in STATUSES else "read"
+    book["progress"] = to_int(book.get("progress"), 0, 100) if book["status"] == "reading" else None
+    book["rating"] = to_int(book.get("rating"), 0, 5) or None      # 별점 1~5, 없으면 비움
     for k in ("review", "quote", "author", "publisher", "category"):
         book[k] = (book.get(k) or "").strip()
     return book
@@ -173,15 +190,19 @@ def new_id(db):
     return max([b.get("id", 0) for b in db["books"]] + [0]) + 1
 
 
+def public(b):
+    out = {k: b.get(k) for k in PUBLIC}
+    out["status"] = out.get("status") or "read"
+    return out
+
+
 def publish(db):
     """ 사이트가 읽는 docs/shelf.json 을 새로 쓴다. 사이트에 필요한 칸만 내보낸다. """
-    keep = ["id", "title", "author", "publisher", "cover", "link", "media",
-            "year", "month", "category", "fav", "review", "quote"]
     books = sorted(db["books"], key=lambda b: (b.get("year") or 0, b.get("month") or 0, b.get("id")), reverse=True)
     out = {
         "shelf": db.get("shelf", {}),
         "updated": date.today().isoformat(),
-        "books": [{k: b.get(k) for k in keep} for b in books],
+        "books": [public(b) for b in books],
     }
     DOCS.mkdir(exist_ok=True)
     SHELF_PATH.write_text(json.dumps(out, ensure_ascii=False, indent=1) + "\n", encoding="utf-8")
@@ -197,9 +218,7 @@ def published_differs(db):
     except ValueError:
         return True
     ids = lambda books: sorted((b.get("id"), json.dumps(b, sort_keys=True, ensure_ascii=False)) for b in books)
-    keep = ["id", "title", "author", "publisher", "cover", "link", "media",
-            "year", "month", "category", "fav", "review", "quote"]
-    mine = [{k: b.get(k) for k in keep} for b in db["books"]]
+    mine = [public(b) for b in db["books"]]
     return ids(mine) != ids(pub.get("books", [])) or pub.get("shelf") != db.get("shelf")
 
 
@@ -277,7 +296,8 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.send_json(book)
             if u.path == "/api/shelf":
                 data = self.read_body()
-                db["shelf"] = {"title": (data.get("title") or "나의 책장").strip(), "owner": (data.get("owner") or "").strip()}
+                db["shelf"] = {"title": (data.get("title") or "나의 책장").strip(), "owner": (data.get("owner") or "").strip(),
+                               "goal": to_int(data.get("goal"), 0, 999) or None}   # 올해 목표 권수
                 save_db(db)
                 return self.send_json(db["shelf"])
             if u.path == "/api/publish":
