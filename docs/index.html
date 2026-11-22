@@ -162,20 +162,7 @@
   .stats-txt h3 { font-size: 17px; font-weight: 600; margin: 0 0 3px; }
   .stats-txt p { margin: 0; font-size: 14px; color: var(--muted); line-height: 1.5; }
   .stats-txt .big { color: var(--ink); font-weight: 600; }
-  .bars-wrap { margin-top: 16px; border-top: .5px solid var(--line); padding-top: 12px; position: relative; }
-  .bars-cap { font-size: 12px; color: var(--muted); margin-bottom: 6px; display: flex; justify-content: space-between; }
-  .bars { display: grid; grid-template-columns: repeat(12, 1fr); gap: 2px; align-items: end; height: 84px; border-bottom: 1px solid var(--line); }
-  .bar { height: 100%; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; cursor: default; position: relative; }
-  .bar i { display: block; width: min(16px, 70%); background: var(--accent); border-radius: 4px 4px 0 0; min-height: 0; transition: opacity .15s; }
-  .bar.zero i { height: 0 !important; }
-  .bar .v { font-size: 10.5px; color: var(--muted); margin-bottom: 2px; }
-  .bars:hover .bar i { opacity: .45; } .bars .bar:hover i, .bars .bar.on i { opacity: 1; }
-  .months { display: grid; grid-template-columns: repeat(12, 1fr); gap: 2px; margin-top: 4px; }
-  .months span { font-size: 10px; color: var(--muted); text-align: center; }
-  .months span.now { color: var(--ink); font-weight: 600; }
-  .tip { position: absolute; pointer-events: none; background: var(--card); color: var(--ink); border-radius: 8px; padding: 4px 9px; font-size: 12px; white-space: nowrap; box-shadow: 0 4px 14px rgba(0,0,0,.18); transform: translate(-50%, -100%); opacity: 0; transition: opacity .12s; z-index: 3; }
-  .tip.show { opacity: 1; }
-  @media (prefers-color-scheme: dark) { .tip { background: #3a3a3c; } .ring .track { stroke: rgba(10,132,255,.22); } }
+  @media (prefers-color-scheme: dark) { .ring .track { stroke: rgba(10,132,255,.22); } }
 
   /* ⑤ 읽는 중 / 읽고 싶은 책 */
   .prog { height: 4px; border-radius: 2px; background: rgba(118,118,128,.2); overflow: hidden; margin-top: 7px; }
@@ -251,6 +238,60 @@
   .chips button[aria-pressed="true"] span { color: rgba(255,255,255,.8); }
   .chips:empty { display: none; }
 
+
+  /* A. 독서 달력: 달마다 그달 읽은 표지가 부채꼴로 쌓인다 */
+  .cal-head { display: flex; align-items: center; justify-content: space-between; margin: 0 0 7px 16px; }
+  .cal-head h2 { margin: 0; }
+  .years { display: flex; gap: 4px; }
+  .years button { border: 0; background: none; color: var(--muted); font-size: 13px; padding: 2px 8px; border-radius: 99px; cursor: pointer; }
+  .years button[aria-pressed="true"] { background: var(--card); color: var(--ink); font-weight: 600; box-shadow: inset 0 0 0 .5px var(--line); }
+  .cal { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
+  .mtile { background: var(--card); border-radius: 12px; padding: 10px 10px 12px; min-height: 132px; display: flex; flex-direction: column; }
+  .mtile.now { box-shadow: inset 0 0 0 2px var(--accent); }
+  .mtile.future { opacity: .45; }
+  .mh { display: flex; justify-content: space-between; align-items: baseline; font-size: 13px; }
+  .mh b { font-weight: 600; } .mh span { color: var(--muted); font-size: 12px; }
+  .mtile.now .mh b { color: var(--accent); }
+  .mstack { position: relative; flex: 1; margin-top: 8px; min-height: 86px; }
+  .mbook { position: absolute; bottom: 0; left: calc(var(--i) * 26px + 4px); border: 0; padding: 0; background: none; cursor: pointer;
+    transform: rotate(calc((var(--i) - 1) * 5deg)); transform-origin: bottom center; transition: transform .2s; z-index: var(--i); }
+  .mbook img, .mbook .nocover { width: 54px; height: 80px; object-fit: cover; border-radius: 3px; display: block; box-shadow: 0 2px 6px rgba(0,0,0,.25); }
+  .mbook .nocover { padding: 4px; } .mbook .nocover b { font-size: 8px; } .mbook .nocover span { display: none; }
+  .mbook:hover { transform: rotate(0) translateY(-6px); z-index: 9; }
+  .more { position: absolute; right: 2px; bottom: 2px; font-size: 11px; font-weight: 600; color: var(--muted); }
+  .mempty { position: absolute; inset: 6px 0 0; border: 1.5px dashed var(--line); border-radius: 6px; }
+  .cal-note { font-size: 12px; color: var(--muted); margin: 8px 16px 0; }
+  @media (max-width: 600px) {
+    .cal { grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .mtile { padding: 8px 8px 10px; min-height: 118px; }
+    .mstack { min-height: 72px; }
+    .mbook { left: calc(var(--i) * 20px + 2px); }
+    .mbook img, .mbook .nocover { width: 44px; height: 66px; }
+  }
+
+  /* B. 올해 독서 결산 카드 */
+  .wrapped-cta { display: flex; align-items: center; gap: 14px; width: 100%; border: 0; text-align: left; cursor: pointer; color: #fff;
+    padding: 16px 18px; border-radius: var(--radius); background: linear-gradient(120deg, #0a84ff, #5e5ce6 55%, #bf5af2); box-shadow: 0 6px 20px rgba(94,92,230,.3); }
+  .wrapped-cta:active { transform: scale(.98); }
+  .wrapped-cta .ic { font-size: 26px; }
+  .wrapped-cta b { display: block; font-size: 17px; }
+  .wrapped-cta span { font-size: 13.5px; opacity: .85; }
+  .wrapped-cta .chev { color: rgba(255,255,255,.7); margin-left: auto; }
+  .wrap-card img { width: 100%; max-width: 420px; display: block; margin: 0 auto; border-radius: 16px; box-shadow: 0 12px 34px rgba(0,0,0,.25); }
+  .wrap-card .loading { aspect-ratio: 4 / 5; max-width: 420px; margin: 0 auto; border-radius: 16px; background: linear-gradient(120deg, #0a84ff, #5e5ce6 55%, #bf5af2); display: grid; place-items: center; color: #fff; }
+  .wrap-actions { display: flex; gap: 10px; max-width: 420px; margin: 16px auto 0; }
+  .wrap-actions button { flex: 1; border: 0; border-radius: 12px; padding: 13px; font-size: 16px; font-weight: 600; cursor: pointer; background: var(--accent); color: #fff; }
+  .wrap-actions button.sub { background: var(--card); color: var(--accent); }
+  .wrap-hint { text-align: center; color: var(--muted); font-size: 12.5px; margin-top: 10px; }
+
+  /* C. 책 꺼내기: 표지 사본이 화면 위를 날아간다 */
+  .fly { position: fixed; z-index: 50; margin: 0; pointer-events: none; object-fit: cover; border-radius: 4px; box-shadow: 0 18px 40px rgba(0,0,0,.35); }
+  dialog.fade[open] { animation: fade .22s ease; }
+  dialog.closing { opacity: 0; transition: opacity .16s ease; }
+  dialog.closing::backdrop { opacity: 0; transition: opacity .16s ease; }
+  dialog.measure { visibility: hidden; animation: none !important; }
+  dialog.measure::backdrop { opacity: 0; }
+
   footer .wrap { padding-top: 8px; padding-bottom: calc(32px + env(safe-area-inset-bottom)); color: var(--muted); font-size: 12px; text-align: center; line-height: 1.6; }
   footer a { color: var(--accent); text-decoration: none; }
   .empty { color: var(--muted); padding: 60px 16px; text-align: center; }
@@ -282,7 +323,7 @@
 </div></header>
 <main><div class="wrap" id="shelf"></div></main>
 <dialog id="dlg" aria-label="책 정보" tabindex="-1">
-  <div class="sheet-top"><div class="grabber"></div><div class="sheet-bar"><button class="done" type="button" onclick="document.getElementById('dlg').close()">완료</button></div></div>
+  <div class="sheet-top"><div class="grabber"></div><div class="sheet-bar"><button class="done" type="button" onclick="closeBook()">완료</button></div></div>
   <div class="sheet-body" id="detail"></div>
 </dialog>
 <footer><div class="wrap">
@@ -301,7 +342,8 @@ const isRead = b => !b.status || b.status === 'read';
 const starsHtml = n => n ? `<span class="stars" aria-label="별점 ${n}점">${'★'.repeat(n)}<span class="off">${'★'.repeat(5 - n)}</span></span>` : '';
 // 보기 방식은 방문자 브라우저에 기억해 둔다 (안 되면 그냥 기본값)
 const store = { get(k, d) { try { return localStorage.getItem(k) || d; } catch { return d; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
-const state = { filter: 'all', cat: '' };   // cat: 고른 분류. 빈 값이면 전체
+const state = { filter: 'all', cat: '', calYear: 0 };   // cat: 고른 분류(빈 값이면 전체), calYear: 달력에서 보는 해
+const REDUCE = matchMedia('(prefers-reduced-motion: reduce)');
 
 function coverHtml(b, size) {
   return b.cover
@@ -324,10 +366,6 @@ const shelfHtml = list => `<div class="bookcase"><div class="shelf">${list.map(s
 function statsHtml() {
   const now = new Date(), year = now.getFullYear();
   const done = BOOKS.filter(b => isRead(b) && Number(b.year) === year);
-  const byMonth = Array.from({ length: 12 }, (_, i) => done.filter(b => Number(b.month) === i + 1).length);
-  const unknown = done.length - byMonth.reduce((a, c) => a + c, 0);
-  const max = Math.max(1, ...byMonth);
-  const peak = byMonth.indexOf(Math.max(...byMonth));
   const reading = BOOKS.filter(b => b.status === 'reading').length, want = BOOKS.filter(b => b.status === 'want').length;
   const C = 2 * Math.PI * 42, ratio = GOAL ? Math.min(1, done.length / GOAL) : 0;
   const line = GOAL
@@ -344,13 +382,6 @@ function statsHtml() {
       </div>
       <div class="stats-txt"><h3>${year}년</h3><p>${line}</p>${extra ? `<p>${extra}</p>` : ''}</div>
     </div>
-    <div class="bars-wrap">
-      <div class="bars-cap"><span>월별 읽은 책</span>${unknown ? `<span>달 모름 ${unknown}권</span>` : ''}</div>
-      <div class="bars">${byMonth.map((n, i) => `<div class="bar${n ? '' : ' zero'}" data-tip="${i + 1}월 · ${n}권" aria-label="${i + 1}월 ${n}권">
-        ${n && i === peak ? `<span class="v">${n}</span>` : ''}<i style="height:${n / max * 64}px"></i></div>`).join('')}</div>
-      <div class="months">${byMonth.map((_, i) => `<span class="${i === now.getMonth() ? 'now' : ''}">${i + 1}월</span>`).join('')}</div>
-      <div class="tip" id="tip"></div>
-    </div>
   </div></section>`;
 }
 
@@ -363,7 +394,8 @@ function render() {
   const reading = pick(BOOKS.filter(b => b.status === 'reading'));
   const want = pick(BOOKS.filter(b => b.status === 'want'));
   const done = pick(BOOKS.filter(isRead));
-  let html = fav || state.cat ? '' : statsHtml();   // 고른 게 있으면 독서 현황은 숨긴다
+  // 고른 게 있으면 독서 현황·결산·달력은 숨긴다
+  let html = fav || state.cat ? '' : statsHtml() + wrappedCtaHtml() + calendarHtml();
 
   // 읽는 중 · 읽고 싶은 책 · 다 읽은 책(해마다) 을 각각 한 칸의 책장으로
   if (reading.length) html += `<section class="section"><h2>읽는 중 · ${reading.length}권</h2>${shelfHtml(reading)}</section>`;
@@ -390,21 +422,10 @@ function renderChips() {
       `<button type="button" data-cat="${esc(c)}" aria-pressed="${c === state.cat}">${esc(label)}<span>${n}</span></button>`).join('');
 }
 
-// 막대에 손가락·마우스를 올리면 'N월 · N권'
-function showTip(bar) {
-  const tip = $('#tip'), wrap = bar.closest('.bars-wrap'); if (!tip) return;
-  document.querySelectorAll('.bar.on').forEach(x => x.classList.remove('on')); bar.classList.add('on');
-  const r = bar.getBoundingClientRect(), w = wrap.getBoundingClientRect(), i = bar.querySelector('i').getBoundingClientRect();
-  tip.textContent = bar.dataset.tip;
-  tip.style.left = Math.min(Math.max(r.left - w.left + r.width / 2, 36), w.width - 36) + 'px';
-  tip.style.top = (Math.min(i.top, r.bottom - 2) - w.top - 6) + 'px';
-  tip.classList.add('show');
-}
-function hideTip() { $('#tip')?.classList.remove('show'); document.querySelectorAll('.bar.on').forEach(x => x.classList.remove('on')); }
-
-function openBook(id) {
+function openBook(id, src) {
   const b = BOOKS.find(x => x.id === id);
   if (!b) return;
+  MODE = 'book';
   const when = `${b.year}년${b.month ? ' ' + b.month + '월' : ''}`;
   const whenLabel = b.status === 'reading' ? '시작한 때' : b.status === 'want' ? '담은 때' : '읽은 때';
   const rows = [['저자', b.author], ['출판사', b.publisher], [whenLabel, when], ['형태', b.media], ['분류', b.category]].filter(r => r[1]);
@@ -427,19 +448,190 @@ function openBook(id) {
       ${rows.map(r => `<div class="info"><span>${r[0]}</span><span>${esc(r[1])}</span></div>`).join('')}
     </div></div>
     ${b.link ? `<div class="group"><div class="card"><a class="link-btn" href="${esc(b.link)}" target="_blank" rel="noopener"><span>YES24에서 보기</span>${CHEV}</a></div></div>` : ''}`;
-  $('#dlg').showModal();
-  $('#dlg').focus();   // 시트 자체에 초점 (완료 버튼에 테두리가 생기지 않게)
-  $('#dlg').scrollTop = 0;
+  // 표지 비율을 미리 정해 둔다 (큰 표지가 늦게 받아져도 자리가 흔들리지 않게)
+  const heroImg = $('#detail .hero .cv img');
+  const ratio = src && src.naturalWidth ? src.naturalHeight / src.naturalWidth : 1.45;
+  if (heroImg) heroImg.style.aspectRatio = `1 / ${ratio}`;
+  pullOut(src, heroImg);
 }
 
-$('#shelf').addEventListener('click', e => { const el = e.target.closest('[data-id]'); if (el) openBook(Number(el.dataset.id)); });
-$('#dlg').addEventListener('click', e => { if (e.target.id === 'dlg') $('#dlg').close(); });   // 바깥을 누르면 닫힘
+// ── C. 책 꺼내기 ──
+let MODE = 'book', SRC = null, FLYING = false;
+// 애니메이션이 끝나면 한 번만 실행. 탭이 백그라운드라 끝 신호가 늦어도 시간이 지나면 반드시 실행한다
+const whenDone = (anim, ms, fn) => { let ran = false; const go = () => { if (!ran) { ran = true; fn(); } }; anim.onfinish = go; setTimeout(go, ms + 120); };
+function showSheet(fade) {
+  const d = $('#dlg');
+  d.classList.toggle('fade', !!fade);
+  d.showModal(); d.focus(); d.scrollTop = 0;   // 시트 자체에 초점 (완료 버튼에 테두리가 생기지 않게)
+}
+function flyEl(from, rect) {
+  const el = from.cloneNode(true);
+  el.classList.add('fly'); el.removeAttribute('loading');
+  Object.assign(el.style, { left: rect.left + 'px', top: rect.top + 'px', width: rect.width + 'px', height: rect.height + 'px' });
+  document.body.appendChild(el);
+  return el;
+}
+function pullOut(src, heroImg) {
+  SRC = src || null;
+  if (!src || !heroImg || REDUCE.matches || FLYING) return showSheet(false);
+  // 1) 시트를 안 보이게 열어서 큰 표지가 놓일 자리를 잰다
+  const d = $('#dlg'); d.classList.add('measure'); d.showModal(); d.scrollTop = 0;
+  const to = heroImg.getBoundingClientRect(); d.close(); d.classList.remove('measure');
+  const from = src.getBoundingClientRect();
+  // 2) 선반의 표지를 들어 올렸다가 가운데로 날린다
+  FLYING = true;
+  const el = flyEl(src, from); src.style.visibility = 'hidden';
+  const a = el.animate([
+    { left: from.left + 'px', top: from.top + 'px', width: from.width + 'px', height: from.height + 'px', transform: 'none' },
+    { left: from.left + 'px', top: from.top - 18 + 'px', width: from.width + 'px', height: from.height + 'px', transform: 'rotate(-3deg) scale(1.05)', offset: .28 },
+    { left: to.left + 'px', top: to.top + 'px', width: to.width + 'px', height: to.height + 'px', transform: 'none' }
+  ], { duration: 560, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards' });
+  whenDone(a, 560, () => { showSheet(true); setTimeout(() => { el.remove(); FLYING = false; }, 30); });
+}
+function closeBook() {
+  const d = $('#dlg');
+  if (!d.open || FLYING) return;
+  const hero = $('#detail .hero .cv img, #detail .hero .cv .nocover');
+  const back = () => { if (SRC) SRC.style.visibility = ''; SRC = null; };
+  if (MODE !== 'book' || !SRC || !hero || REDUCE.matches || !document.body.contains(SRC)) { d.close(); back(); return; }
+  // 시트는 흐려지고, 표지는 원래 선반 자리로 돌아간다
+  const from = hero.getBoundingClientRect(), to = SRC.getBoundingClientRect(), src = SRC;
+  FLYING = true;
+  d.classList.add('closing');
+  setTimeout(() => {
+    d.close(); d.classList.remove('closing', 'fade');
+    const el = flyEl(hero, from);
+    const a = el.animate([
+      { left: from.left + 'px', top: from.top + 'px', width: from.width + 'px', height: from.height + 'px' },
+      { left: to.left + 'px', top: to.top + 'px', width: to.width + 'px', height: to.height + 'px' }
+    ], { duration: 420, easing: 'cubic-bezier(.3,.7,.2,1)', fill: 'forwards' });
+    whenDone(a, 420, () => { src.style.visibility = ''; el.remove(); SRC = null; FLYING = false; });
+  }, 160);
+}
+
+// ── A. 독서 달력 ──
+function calendarHtml() {
+  const done = BOOKS.filter(isRead);
+  const years = [...new Set(done.map(b => Number(b.year)))].filter(Boolean).sort((a, b) => b - a);
+  if (!years.length) return '';
+  const now = new Date();
+  const y = years.includes(state.calYear) ? state.calYear : (years.includes(now.getFullYear()) ? now.getFullYear() : years[0]);
+  const inYear = done.filter(b => Number(b.year) === y);
+  const unknown = inYear.filter(b => !b.month).length;
+  const tiles = Array.from({ length: 12 }, (_, i) => {
+    const m = i + 1, list = inYear.filter(b => Number(b.month) === m);
+    const isNow = y === now.getFullYear() && m === now.getMonth() + 1;
+    const future = y > now.getFullYear() || (y === now.getFullYear() && m > now.getMonth() + 1);
+    return `<div class="mtile${isNow ? ' now' : ''}${future ? ' future' : ''}">
+      <div class="mh"><b>${m}월</b><span>${list.length ? list.length + '권' : ''}</span></div>
+      <div class="mstack">${list.length ? list.slice(0, 3).map((b, k) =>
+        `<button class="mbook" data-id="${b.id}" style="--i:${k}" title="${esc(b.title)}" aria-label="${esc(b.title)}">${coverHtml(b, 'L')}</button>`).join('')
+        + (list.length > 3 ? `<span class="more">+${list.length - 3}</span>` : '') : (future ? '' : '<span class="mempty"></span>')}</div></div>`;
+  }).join('');
+  return `<section class="section"><div class="cal-head"><h2>독서 달력</h2>${years.length > 1
+      ? `<div class="years">${years.map(v => `<button type="button" data-year="${v}" aria-pressed="${v === y}">${v}</button>`).join('')}</div>` : ''}</div>
+    <div class="cal">${tiles}</div>${unknown ? `<p class="cal-note">읽은 달을 적지 않은 책 ${unknown}권은 달력에 없어요.</p>` : ''}</section>`;
+}
+
+// ── B. 올해 독서 결산 카드 ──
+function wrappedCtaHtml() {
+  const y = new Date().getFullYear();
+  if (!BOOKS.some(b => isRead(b) && Number(b.year) === y)) return '';
+  return `<section class="section"><button class="wrapped-cta" type="button" id="wrappedBtn"><span class="ic">✦</span>
+    <div><b>${y} 독서 결산 카드</b><span>올해 읽은 책을 한 장으로 모아 봐요</span></div>${CHEV}</button></section>`;
+}
+function rr(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
+function fit(ctx, text, max) { text = String(text); if (ctx.measureText(text).width <= max) return text; while (text && ctx.measureText(text + '…').width > max) text = text.slice(0, -1); return text + '…'; }
+const loadImg = url => new Promise(res => { const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => res(im); im.onerror = () => res(null); im.src = url; });
+async function drawWrapped() {
+  const W = 1080, H = 1350, y = new Date().getFullYear();
+  const F = '-apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Malgun Gothic", sans-serif';
+  const done = BOOKS.filter(b => isRead(b) && Number(b.year) === y);
+  const reading = BOOKS.filter(b => b.status === 'reading');
+  const count = (list, key) => { const c = {}; list.forEach(b => { const k = key(b); if (k) c[k] = (c[k] || 0) + 1; }); return Object.entries(c).sort((a, b) => b[1] - a[1])[0]; };
+  const topCat = count(done, b => b.category || '기타'), topMonth = count(done, b => b.month);
+  const best = [...done].filter(b => b.rating).sort((a, b) => b.rating - a.rating || (b.fav - a.fav))[0];
+  const picks = [...done].sort((a, b) => (b.fav - a.fav) || ((b.rating || 0) - (a.rating || 0))).slice(0, 5);
+  const imgs = await Promise.all(picks.map(b => b.cover ? loadImg(sized(b.cover, 'L')) : Promise.resolve(null)));
+
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H;
+  const c = cv.getContext('2d');
+  const g = c.createLinearGradient(0, 0, W, H); g.addColorStop(0, '#0a84ff'); g.addColorStop(.55, '#5e5ce6'); g.addColorStop(1, '#bf5af2');
+  c.fillStyle = g; c.fillRect(0, 0, W, H);
+  const glow = c.createRadialGradient(W * .85, H * .1, 0, W * .85, H * .1, 700); glow.addColorStop(0, 'rgba(255,255,255,.22)'); glow.addColorStop(1, 'rgba(255,255,255,0)');
+  c.fillStyle = glow; c.fillRect(0, 0, W, H);
+  c.fillStyle = '#fff'; c.textBaseline = 'alphabetic';
+  c.font = `600 30px ${F}`; c.globalAlpha = .75; c.fillText(`MY READING ${y}`, 80, 120); c.globalAlpha = 1;
+  c.font = `800 76px ${F}`; c.fillText(`${y} 나의 독서`, 80, 210);
+  // 큰 숫자
+  c.font = `800 250px ${F}`; c.fillText(String(done.length), 72, 470);
+  const nw = c.measureText(String(done.length)).width;
+  c.font = `700 80px ${F}`; c.fillText('권', 92 + nw, 470);
+  c.font = `500 38px ${F}`; c.globalAlpha = .9;
+  c.fillText(GOAL ? `목표 ${GOAL}권 중 ${Math.round(done.length / GOAL * 100)}% 달성` : '올해 다 읽은 책', 84, 535); c.globalAlpha = 1;
+  if (GOAL) { c.fillStyle = 'rgba(255,255,255,.25)'; rr(c, 84, 560, 600, 14, 7); c.fill(); c.fillStyle = '#fff'; rr(c, 84, 560, Math.max(14, 600 * Math.min(1, done.length / GOAL)), 14, 7); c.fill(); }
+  // 대표 표지 5권
+  const cw = 168, ch = 248, gap = 22, total = picks.length * cw + (picks.length - 1) * gap;
+  let x = (W - total) / 2; const top = 630;
+  picks.forEach((b, i) => {
+    c.save(); c.shadowColor = 'rgba(0,0,0,.35)'; c.shadowBlur = 30; c.shadowOffsetY = 14;
+    rr(c, x, top, cw, ch, 10); c.fillStyle = 'rgba(255,255,255,.2)'; c.fill(); c.restore();
+    c.save(); rr(c, x, top, cw, ch, 10); c.clip();
+    const im = imgs[i];
+    if (im) { const s = Math.max(cw / im.width, ch / im.height); c.drawImage(im, x + (cw - im.width * s) / 2, top + (ch - im.height * s) / 2, im.width * s, im.height * s); }
+    else { c.fillStyle = 'rgba(255,255,255,.9)'; c.fillRect(x, top, cw, ch); c.fillStyle = '#333'; c.font = `700 24px ${F}`; c.fillText(fit(c, b.title, cw - 24), x + 12, top + ch - 24); }
+    c.restore();
+    if (b.fav) { c.fillStyle = '#fff'; c.beginPath(); c.arc(x + cw - 24, top + 24, 18, 0, Math.PI * 2); c.fill(); c.fillStyle = '#ff375f'; c.font = `700 22px ${F}`; c.fillText('♥', x + cw - 35, top + 32); }
+    x += cw + gap;
+  });
+  // 2×2 정보 칸
+  const tiles = [
+    ['가장 많이 읽은 분류', topCat ? `${topCat[0]} · ${topCat[1]}권` : '—'],
+    ['가장 많이 읽은 달', topMonth ? `${topMonth[0]}월 · ${topMonth[1]}권` : '—'],
+    ['최고 별점', best ? `★${best.rating} ${best.title}` : '—'],
+    ['지금 읽는 중', reading[0] ? `${reading[0].title} ${reading[0].progress || 0}%` : '—'],
+  ];
+  tiles.forEach(([label, value], i) => {
+    const tx = 80 + (i % 2) * 470, ty = 935 + Math.floor(i / 2) * 170;
+    c.fillStyle = 'rgba(255,255,255,.16)'; rr(c, tx, ty, 450, 150, 28); c.fill();
+    c.fillStyle = '#fff'; c.globalAlpha = .75; c.font = `500 28px ${F}`; c.fillText(label, tx + 30, ty + 56); c.globalAlpha = 1;
+    c.font = `700 40px ${F}`; c.fillText(fit(c, value, 390), tx + 30, ty + 112);
+  });
+  c.globalAlpha = .7; c.font = `500 24px ${F}`;
+  c.fillText((location.host + location.pathname).replace(/index\.html$/, '').replace(/\/$/, ''), 80, 1300);
+  c.textAlign = 'right'; c.fillText('도서 정보·표지 제공 YES24', W - 80, 1300); c.textAlign = 'left'; c.globalAlpha = 1;
+  return cv;
+}
+async function openWrapped() {
+  MODE = 'wrapped'; SRC = null;
+  const y = new Date().getFullYear();
+  $('#detail').innerHTML = `<div class="wrap-card"><div class="loading">카드를 만드는 중…</div></div>`;
+  showSheet(false);
+  const cv = await drawWrapped();
+  let url = '';
+  try { url = cv.toDataURL('image/png'); } catch (e) { url = ''; }
+  if (!url) { $('#detail').innerHTML = '<p class="empty">카드를 만들지 못했어요.</p>'; return; }
+  $('#detail').innerHTML = `<div class="wrap-card"><img src="${url}" alt="${y} 나의 독서 결산 카드"></div>
+    <div class="wrap-actions"><button type="button" id="saveWrapped">이미지로 저장</button>${navigator.canShare ? '<button type="button" class="sub" id="shareWrapped">공유</button>' : ''}</div>
+    <p class="wrap-hint">휴대폰에서는 카드를 길게 눌러 사진에 저장할 수도 있어요.</p>`;
+  const name = `${y}-나의독서.png`;
+  $('#saveWrapped').onclick = () => { const a = document.createElement('a'); a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove(); };
+  $('#shareWrapped')?.addEventListener('click', () => cv.toBlob(async blob => {
+    const file = new File([blob], name, { type: 'image/png' });
+    try { if (navigator.canShare({ files: [file] })) await navigator.share({ files: [file], title: `${y} 나의 독서` }); } catch (e) {}
+  }, 'image/png'));
+}
+
+$('#shelf').addEventListener('click', e => {
+  const yr = e.target.closest('[data-year]'); if (yr) { state.calYear = Number(yr.dataset.year); render(); return; }
+  if (e.target.closest('#wrappedBtn')) { openWrapped(); return; }
+  const el = e.target.closest('[data-id]'); if (el) openBook(Number(el.dataset.id), el.querySelector('img, .nocover'));
+});
+$('#dlg').addEventListener('click', e => { if (e.target.id === 'dlg') closeBook(); });   // 바깥을 누르면 닫힘
+$('#dlg').addEventListener('cancel', e => { e.preventDefault(); closeBook(); });          // Esc 키
 $('#chips').addEventListener('click', e => { const el = e.target.closest('[data-cat]'); if (el) { state.cat = el.dataset.cat; render(); } });
 document.querySelectorAll('[data-filter]').forEach(el => el.addEventListener('click', () => { state.filter = el.dataset.filter; render(); }));
 
-$('#shelf').addEventListener('pointerover', e => { const b = e.target.closest('.bar'); if (b) showTip(b); });
-$('#shelf').addEventListener('pointerout', e => { if (e.target.closest('.bars') && !e.relatedTarget?.closest?.('.bars')) hideTip(); });
-$('#shelf').addEventListener('pointerdown', e => { const b = e.target.closest('.bar'); if (b) showTip(b); else hideTip(); });
 
 // 스크롤하면 위쪽 바가 반투명해지고 작은 제목이 나타난다
 const onScroll = () => $('#navbar').classList.toggle('scrolled', window.scrollY > 40);
