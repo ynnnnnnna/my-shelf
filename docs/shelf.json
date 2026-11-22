@@ -7,7 +7,7 @@
  "updated": "2026-11-22",
  "books": [
   {
-   "id": 20,
+   "id": 40,
    "title": "부자의 그릇",
    "author": "이즈미 마사토",
    "publisher": "다산3.0",
@@ -25,7 +25,7 @@
    "rating": null
   },
   {
-   "id": 40,
+   "id": 39,
    "title": "혼투족을 위한 남다른 부동산 투자",
    "author": "옥동자(강대성)",
    "publisher": "아라크네",
@@ -43,7 +43,7 @@
    "rating": null
   },
   {
-   "id": 39,
+   "id": 38,
    "title": "최소한의 과학 공부",
    "author": "배대웅",
    "publisher": "웨일북",
@@ -61,7 +61,7 @@
    "rating": null
   },
   {
-   "id": 38,
+   "id": 37,
    "title": "나는 부동산과 맞벌이한다",
    "author": "너바나",
    "publisher": "알키",
@@ -79,7 +79,7 @@
    "rating": null
   },
   {
-   "id": 37,
+   "id": 36,
    "title": "돈의 속성 400쇄 리커버",
    "author": "김승호",
    "publisher": "스노우폭스북스",
@@ -97,7 +97,7 @@
    "rating": null
   },
   {
-   "id": 36,
+   "id": 35,
    "title": "돈의 심리학 (30만 부 기념 스페셜 에디션)",
    "author": "모건 하우절",
    "publisher": "인플루엔셜",
@@ -115,7 +115,7 @@
    "rating": null
   },
   {
-   "id": 35,
+   "id": 34,
    "title": "딸아, 돈 공부 절대 미루지 마라",
    "author": "박소연",
    "publisher": "메이븐",
@@ -133,7 +133,7 @@
    "rating": null
   },
   {
-   "id": 34,
+   "id": 33,
    "title": "월 300 만원 버는 주식 투자 공식",
    "author": "진서빈",
    "publisher": "이든하우스",
@@ -151,7 +151,7 @@
    "rating": null
   },
   {
-   "id": 33,
+   "id": 32,
    "title": "강남에 집 사고 싶어요",
    "author": "오스틀로이드",
    "publisher": "진서원",
@@ -169,79 +169,7 @@
    "rating": null
   },
   {
-   "id": 32,
-   "title": "50억짜리 임장보고서",
-   "author": "성연경",
-   "publisher": "진서원",
-   "cover": "https://image.yes24.com/goods/114864182/L",
-   "link": "https://www.yes24.com/product/goods/114864182",
-   "media": "종이책",
-   "year": 2025,
-   "month": 3,
-   "category": "경제 경영",
-   "fav": false,
-   "review": "",
-   "quote": "",
-   "status": "read",
-   "progress": null,
-   "rating": null
-  },
-  {
    "id": 31,
-   "title": "월급쟁이 부자로 은퇴하라",
-   "author": "너나위",
-   "publisher": "알에이치코리아(RHK)",
-   "cover": "https://image.yes24.com/goods/110050359/L",
-   "link": "https://www.yes24.com/product/goods/110050359",
-   "media": "종이책",
-   "year": 2025,
-   "month": 3,
-   "category": "경제 경영",
-   "fav": false,
-   "review": "",
-   "quote": "",
-   "status": "read",
-   "progress": null,
-   "rating": null
-  },
-  {
-   "id": 30,
-   "title": "나는 1,000만 원으로 아파트 산다",
-   "author": "시크릿브라더",
-   "publisher": "황금부엉이",
-   "cover": "https://image.yes24.com/goods/104491194/L",
-   "link": "https://www.yes24.com/product/goods/104491194",
-   "media": "종이책",
-   "year": 2025,
-   "month": 3,
-   "category": "경제 경영",
-   "fav": false,
-   "review": "",
-   "quote": "",
-   "status": "read",
-   "progress": null,
-   "rating": null
-  },
-  {
-   "id": 29,
-   "title": "양자컴퓨터의 미래",
-   "author": "미치오 카쿠",
-   "publisher": "김영사",
-   "cover": "https://image.yes24.com/goods/124057844/L",
-   "link": "https://www.yes24.com/product/goods/124057844",
-   "media": "종이책",
-   "year": 2025,
-   "month": 3,
-   "category": "자연과학",
-   "fav": false,
-   "review": "",
-   "quote": "",
-   "status": "read",
-   "progress": null,
-   "rating": null
-  },
-  {
-   "id": 28,
    "title": "마흔에 읽는 쇼펜하우어",
    "author": "강용수",
    "publisher": "유노북스",
@@ -259,7 +187,7 @@
    "rating": null
   },
   {
-   "id": 26,
+   "id": 30,
    "title": "전설로 떠나는 월가의 영웅",
    "author": "피터 린치,존 로스차일드",
    "publisher": "국일증권경제연구소",
@@ -277,7 +205,79 @@
    "rating": null
   },
   {
+   "id": 29,
+   "title": "50억짜리 임장보고서",
+   "author": "성연경",
+   "publisher": "진서원",
+   "cover": "https://image.yes24.com/goods/114864182/L",
+   "link": "https://www.yes24.com/product/goods/114864182",
+   "media": "종이책",
+   "year": 2025,
+   "month": 3,
+   "category": "경제 경영",
+   "fav": false,
+   "review": "",
+   "quote": "",
+   "status": "read",
+   "progress": null,
+   "rating": null
+  },
+  {
+   "id": 28,
+   "title": "월급쟁이 부자로 은퇴하라",
+   "author": "너나위",
+   "publisher": "알에이치코리아(RHK)",
+   "cover": "https://image.yes24.com/goods/110050359/L",
+   "link": "https://www.yes24.com/product/goods/110050359",
+   "media": "종이책",
+   "year": 2025,
+   "month": 3,
+   "category": "경제 경영",
+   "fav": false,
+   "review": "",
+   "quote": "",
+   "status": "read",
+   "progress": null,
+   "rating": null
+  },
+  {
    "id": 27,
+   "title": "양자컴퓨터의 미래",
+   "author": "미치오 카쿠",
+   "publisher": "김영사",
+   "cover": "https://image.yes24.com/goods/124057844/L",
+   "link": "https://www.yes24.com/product/goods/124057844",
+   "media": "종이책",
+   "year": 2025,
+   "month": 3,
+   "category": "자연과학",
+   "fav": false,
+   "review": "",
+   "quote": "",
+   "status": "read",
+   "progress": null,
+   "rating": null
+  },
+  {
+   "id": 26,
+   "title": "나는 1,000만 원으로 아파트 산다",
+   "author": "시크릿브라더",
+   "publisher": "황금부엉이",
+   "cover": "https://image.yes24.com/goods/104491194/L",
+   "link": "https://www.yes24.com/product/goods/104491194",
+   "media": "종이책",
+   "year": 2025,
+   "month": 3,
+   "category": "경제 경영",
+   "fav": false,
+   "review": "",
+   "quote": "",
+   "status": "read",
+   "progress": null,
+   "rating": null
+  },
+  {
+   "id": 25,
    "title": "해독 혁명",
    "author": "닥터 라이블리(최지영)",
    "publisher": "웅진지식하우스",
@@ -295,7 +295,7 @@
    "rating": null
   },
   {
-   "id": 25,
+   "id": 24,
    "title": "THE MONEY BOOK 더 머니북",
    "author": "토스",
    "publisher": "비바리퍼블리카",
@@ -331,30 +331,12 @@
    "rating": null
   },
   {
-   "id": 24,
+   "id": 22,
    "title": "워렌 버핏의 재무제표 활용법",
    "author": "메리 버핏,데이비드 클라크",
    "publisher": "부크홀릭",
    "cover": "https://image.yes24.com/goods/3661436/L",
    "link": "https://www.yes24.com/product/goods/3661436",
-   "media": "종이책",
-   "year": 2025,
-   "month": 1,
-   "category": "경제 경영",
-   "fav": false,
-   "review": "",
-   "quote": "",
-   "status": "read",
-   "progress": null,
-   "rating": null
-  },
-  {
-   "id": 22,
-   "title": "이코노미스트 2025 세계대전망",
-   "author": "영국 이코노미스트",
-   "publisher": "한국경제신문",
-   "cover": "https://image.yes24.com/goods/139709100/L",
-   "link": "https://www.yes24.com/product/goods/139709100",
    "media": "종이책",
    "year": 2025,
    "month": 1,
@@ -377,6 +359,24 @@
    "year": 2025,
    "month": 1,
    "category": "소설/시/희곡",
+   "fav": false,
+   "review": "",
+   "quote": "",
+   "status": "read",
+   "progress": null,
+   "rating": null
+  },
+  {
+   "id": 20,
+   "title": "이코노미스트 2025 세계대전망",
+   "author": "영국 이코노미스트",
+   "publisher": "한국경제신문",
+   "cover": "https://image.yes24.com/goods/139709100/L",
+   "link": "https://www.yes24.com/product/goods/139709100",
+   "media": "종이책",
+   "year": 2025,
+   "month": 1,
+   "category": "경제 경영",
    "fav": false,
    "review": "",
    "quote": "",

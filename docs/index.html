@@ -289,6 +289,8 @@
   .wrapped-cta b { display: block; font-size: 17px; }
   .wrapped-cta span { font-size: 13.5px; opacity: .85; }
   .wrapped-cta .chev { color: rgba(255,255,255,.7); margin-left: auto; }
+  .wrap-years { justify-content: center; margin: 0 auto 14px; }
+  .wrap-years button { font-size: 15px; padding: 5px 14px; }
   .wrap-card img { width: 100%; max-width: 420px; display: block; margin: 0 auto; border-radius: 16px; box-shadow: 0 12px 34px rgba(0,0,0,.25); }
   .wrap-card .loading { aspect-ratio: 4 / 5; max-width: 420px; margin: 0 auto; border-radius: 16px; background: linear-gradient(120deg, #0a84ff, #5e5ce6 55%, #bf5af2); display: grid; place-items: center; color: #fff; }
   .wrap-actions { display: flex; gap: 10px; max-width: 420px; margin: 16px auto 0; }
@@ -701,23 +703,26 @@ function calendarHtml() {
 }
 
 // ── B. 올해 독서 결산 카드 ──
+// 결산 카드를 만들 수 있는 해: 다 읽은 책이 있는 해 (최근 순)
+const wrappedYears = () => [...new Set(BOOKS.filter(isRead).map(b => Number(b.year)).filter(Boolean))].sort((a, b) => b - a);
 function wrappedCtaHtml() {
-  const y = new Date().getFullYear();
-  if (!BOOKS.some(b => isRead(b) && Number(b.year) === y)) return '';
+  if (!wrappedYears().length) return '';
   return `<section class="section"><button class="wrapped-cta" type="button" id="wrappedBtn"><span class="ic">✦</span>
-    <div><b>${y} 독서 결산 카드</b><span>올해 읽은 책을 한 장으로 모아 봐요</span></div>${CHEV}</button></section>`;
+    <div><b>독서 결산 카드</b><span>해마다 읽은 책을 한 장으로 모아 봐요</span></div>${CHEV}</button></section>`;
 }
 function rr(ctx, x, y, w, h, r) { ctx.beginPath(); ctx.moveTo(x + r, y); ctx.arcTo(x + w, y, x + w, y + h, r); ctx.arcTo(x + w, y + h, x, y + h, r); ctx.arcTo(x, y + h, x, y, r); ctx.arcTo(x, y, x + w, y, r); ctx.closePath(); }
 function fit(ctx, text, max) { text = String(text); if (ctx.measureText(text).width <= max) return text; while (text && ctx.measureText(text + '…').width > max) text = text.slice(0, -1); return text + '…'; }
 const loadImg = url => new Promise(res => { const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => res(im); im.onerror = () => res(null); im.src = url; });
-async function drawWrapped() {
-  const W = 1080, H = 1350, y = new Date().getFullYear();
+async function drawWrapped(y) {
+  const W = 1080, H = 1350, isNow = y === new Date().getFullYear();   // 목표·읽는 중은 올해 카드에만
   const F = '"Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif';
   const FS = '"Noto Serif KR", ui-serif, "AppleMyungjo", serif';
   // 캔버스는 글꼴이 다 받아진 뒤에 그려야 새 글꼴로 나온다
   try { await Promise.all([document.fonts.load(`800 120px "Pretendard Variable"`, '0123456789권%·'), document.fonts.load(`700 76px "Noto Serif KR"`, `${y} 나의 독서`)]); } catch (e) {}
   const done = BOOKS.filter(b => isRead(b) && Number(b.year) === y);
   const reading = BOOKS.filter(b => b.status === 'reading');
+  // 날짜(일)는 저장하지 않으니, 같은 달 안에서는 먼저 넣은 책(번호가 작은 책)을 첫 책으로 본다
+  const first = [...done].filter(b => b.month).sort((a, b) => a.month - b.month || a.id - b.id)[0] || done[0];
   const count = (list, key) => { const c = {}; list.forEach(b => { const k = key(b); if (k) c[k] = (c[k] || 0) + 1; }); return Object.entries(c).sort((a, b) => b[1] - a[1])[0]; };
   const topCat = count(done, b => b.category || '기타'), topMonth = count(done, b => b.month);
   const best = [...done].filter(b => b.rating).sort((a, b) => b.rating - a.rating || (b.fav - a.fav))[0];
@@ -738,8 +743,8 @@ async function drawWrapped() {
   const nw = c.measureText(String(done.length)).width;
   c.font = `700 80px ${F}`; c.fillText('권', 92 + nw, 470);
   c.font = `500 38px ${F}`; c.globalAlpha = .9;
-  c.fillText(GOAL ? `목표 ${GOAL}권 중 ${Math.round(done.length / GOAL * 100)}% 달성` : '올해 다 읽은 책', 84, 535); c.globalAlpha = 1;
-  if (GOAL) { c.fillStyle = 'rgba(255,255,255,.25)'; rr(c, 84, 560, 600, 14, 7); c.fill(); c.fillStyle = '#fff'; rr(c, 84, 560, Math.max(14, 600 * Math.min(1, done.length / GOAL)), 14, 7); c.fill(); }
+  c.fillText(isNow && GOAL ? `목표 ${GOAL}권 중 ${Math.round(done.length / GOAL * 100)}% 달성` : `${y}년에 다 읽은 책`, 84, 535); c.globalAlpha = 1;
+  if (isNow && GOAL) { c.fillStyle = 'rgba(255,255,255,.25)'; rr(c, 84, 560, 600, 14, 7); c.fill(); c.fillStyle = '#fff'; rr(c, 84, 560, Math.max(14, 600 * Math.min(1, done.length / GOAL)), 14, 7); c.fill(); }
   // 대표 표지 5권
   const cw = 168, ch = 248, gap = 22, total = picks.length * cw + (picks.length - 1) * gap;
   let x = (W - total) / 2; const top = 630;
@@ -759,7 +764,8 @@ async function drawWrapped() {
     ['가장 많이 읽은 분류', topCat ? `${topCat[0]} · ${topCat[1]}권` : '—'],
     ['가장 많이 읽은 달', topMonth ? `${topMonth[0]}월 · ${topMonth[1]}권` : '—'],
     ['최고 별점', best ? `★${best.rating} ${best.title}` : '—'],
-    ['지금 읽는 중', reading[0] ? `${reading[0].title} ${reading[0].progress || 0}%` : '—'],
+    isNow ? ['지금 읽는 중', reading[0] ? `${reading[0].title} ${reading[0].progress || 0}%` : '—']
+          : ['그해 첫 책', first ? `${first.month ? first.month + '월 ' : ''}${first.title}` : '—'],
   ];
   tiles.forEach(([label, value], i) => {
     const tx = 80 + (i % 2) * 470, ty = 935 + Math.floor(i / 2) * 170;
@@ -772,16 +778,22 @@ async function drawWrapped() {
   c.textAlign = 'right'; c.fillText('도서 정보·표지 제공 YES24', W - 80, 1300); c.textAlign = 'left'; c.globalAlpha = 1;
   return cv;
 }
-async function openWrapped() {
+async function openWrapped(pick) {
   MODE = 'wrapped'; SRC = null; $('#dlg').classList.remove('tinted');
-  const y = new Date().getFullYear();
-  $('#detail').innerHTML = `<div class="wrap-card"><div class="loading">카드를 만드는 중…</div></div>`;
-  showSheet(false);
-  const cv = await drawWrapped();
+  const years = wrappedYears(), now = new Date().getFullYear();
+  const y = years.includes(pick) ? pick : (years.includes(now) ? now : years[0]);
+  // 연도 고르기: 다 읽은 책이 있는 해만. 고르면 그해 카드로 다시 그린다
+  const yearsHtml = years.length > 1 ? `<div class="years wrap-years" role="group" aria-label="결산 연도">${years.map(v =>
+    `<button type="button" data-wyear="${v}" aria-pressed="${v === y}">${v}</button>`).join('')}</div>` : '';
+  $('#detail').innerHTML = `${yearsHtml}<div class="wrap-card"><div class="loading">카드를 만드는 중…</div></div>`;
+  if (!$('#dlg').open) showSheet(false);
+  const cv = await drawWrapped(y);
+  if (MODE !== 'wrapped' || !$(`[data-wyear="${y}"]`) && years.length > 1) return;   // 그사이 다른 해를 골랐으면 버린다
   let url = '';
   try { url = cv.toDataURL('image/png'); } catch (e) { url = ''; }
   if (!url) { $('#detail').innerHTML = '<p class="empty">카드를 만들지 못했어요.</p>'; return; }
-  $('#detail').innerHTML = `<div class="wrap-card"><img src="${url}" alt="${y} 나의 독서 결산 카드"></div>
+  if (years.length > 1 && $('[data-wyear][aria-pressed="true"]')?.dataset.wyear !== String(y)) return;
+  $('#detail').innerHTML = `${yearsHtml}<div class="wrap-card"><img src="${url}" alt="${y} 나의 독서 결산 카드"></div>
     <div class="wrap-actions"><button type="button" id="saveWrapped">이미지로 저장</button>${navigator.canShare ? '<button type="button" class="sub" id="shareWrapped">공유</button>' : ''}</div>
     <p class="wrap-hint">휴대폰에서는 카드를 길게 눌러 사진에 저장할 수도 있어요.</p>`;
   const name = `${y}-나의독서.png`;
@@ -798,6 +810,7 @@ $('#shelf').addEventListener('click', e => {
   const el = e.target.closest('[data-id]'); if (el) openBook(Number(el.dataset.id), el.querySelector('img, .nocover'));
 });
 $('#dlg').addEventListener('click', e => { if (e.target.id === 'dlg') closeBook(); });   // 바깥을 누르면 닫힘
+$('#detail').addEventListener('click', e => { const b = e.target.closest('[data-wyear]'); if (b && b.getAttribute('aria-pressed') !== 'true') openWrapped(Number(b.dataset.wyear)); });
 // 탭 바꾸기. 주소 끝(#want, #calendar)에도 남겨서 뒤로 가기·공유가 되게 한다
 function setTab(tab) {
   if (tab === state.tab) { window.scrollTo({ top: 0, behavior: REDUCE.matches ? 'auto' : 'smooth' }); return; }
