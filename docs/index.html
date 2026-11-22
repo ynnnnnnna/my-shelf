@@ -2,87 +2,203 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <title>나의 책장</title>
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Gothic+A1:wght@400;600;800&display=swap" rel="stylesheet">
 <!--
-  나의 책장 · 사이트 쪽
+  나의 책장 · 사이트 쪽 (아이폰 UI 스타일)
   이 폴더(docs/)가 GitHub Pages 로 웹에 올라간다. 화면은 이 파일 하나이고, 데이터는 같은 폴더의 shelf.json 하나만 읽는다.
   shelf.json 은 어드민의 [게시] 버튼이 만든다. 여기서 직접 고치지 말고 어드민에서 고친 뒤 게시한다.
   디자인은 마음대로 바꿔도 된다. shelf.json 을 읽는 부분만 남아 있으면 어드민과 게시는 그대로 돌아간다.
-  색, 글꼴, 칸 크기만 살짝 바꿀 때는 아래 :root 의 값을 고치면 화면 전체에 반영된다.
+  색, 칸 크기만 살짝 바꿀 때는 아래 :root 의 값을 고치면 화면 전체에 반영된다.
+  --accent 가 버튼·링크 색(아이폰 기본 파란색). 다른 색으로 바꾸면 전체 포인트 색이 바뀐다.
 -->
 <style>
   :root {
-    --bg: #fbfaf6; --ink: #1d1d1b; --muted: #8a877d; --line: #e6e2d6; --accent: #b0412e; --card: #fff;
-    --cover-w: 150px;   /* 표지 칸의 최소 너비. 키우면 한 줄에 들어가는 책이 줄어든다 */
+    --bg: #f2f2f7;          /* 바탕 (아이폰 설정 앱 회색) */
+    --card: #ffffff;        /* 카드 */
+    --card-2: #f2f2f7;      /* 카드 안의 칸 */
+    --ink: #000000;         /* 글자 */
+    --muted: #8e8e93;       /* 흐린 글자 */
+    --line: rgba(60,60,67,.18);  /* 구분선 */
+    --accent: #007aff;      /* 포인트 색 (아이폰 파란색) */
+    --heart: #ff375f;       /* 추천 하트 */
+    --bar: rgba(242,242,247,.78);  /* 위쪽 반투명 바 */
+    --sheet-shadow: 0 -10px 40px rgba(0,0,0,.12);
+    --sheet-bar: rgba(242,242,247,.85);  /* 상세 시트 위쪽 바 */
+    --cover-w: 128px;       /* 표지 칸의 최소 너비. 키우면 한 줄에 들어가는 책이 줄어든다 */
+    --radius: 14px;
   }
   @media (prefers-color-scheme: dark) {
-    :root { --bg: #181816; --ink: #eeebe2; --muted: #9a968b; --line: #34332e; --accent: #e07a5f; --card: #23221f; }
+    :root {
+      --bg: #000000; --card: #1c1c1e; --card-2: #2c2c2e; --ink: #ffffff; --muted: #8e8e93;
+      --line: rgba(84,84,88,.6); --accent: #0a84ff; --heart: #ff375f;
+      --bar: rgba(22,22,24,.72); --sheet-shadow: 0 -10px 40px rgba(0,0,0,.6); --sheet-bar: rgba(0,0,0,.8);
+    }
   }
-  * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font-family: "Gothic A1", -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; }
-  header { padding: 40px 24px 8px; max-width: 1240px; margin: 0 auto; }
-  h1 { font-size: clamp(28px, 5vw, 44px); font-weight: 800; letter-spacing: -0.02em; margin: 0; }
-  .owner { color: var(--muted); margin-top: 8px; font-size: 14px; }
-  main { max-width: 1240px; margin: 0 auto; padding: 8px 24px 64px; }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Apple SD Gothic Neo", "Pretendard", "Malgun Gothic", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased; letter-spacing: -0.01em;
+  }
+  button { font: inherit; color: inherit; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 0 max(16px, env(safe-area-inset-left)) 0 max(16px, env(safe-area-inset-right)); }
 
-  /* 연도별 묶음 */
-  .year { margin-top: 40px; }
-  .year h2 { font-size: 15px; font-weight: 600; color: var(--muted); border-bottom: 1px solid var(--line); padding-bottom: 10px; margin: 0 0 22px; }
-  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--cover-w), 1fr)); gap: 34px 22px; align-items: end; }
+  /* 위쪽 반투명 바. 스크롤하면 작은 제목이 나타난다 (아이폰 Large Title 방식) */
+  .navbar {
+    position: sticky; top: 0; z-index: 10; padding-top: env(safe-area-inset-top);
+    background: transparent; border-bottom: .5px solid transparent;
+    transition: background .2s, border-color .2s;
+  }
+  .navbar.scrolled {
+    background: var(--bar); border-bottom-color: var(--line);
+    -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px);
+  }
+  .navbar .wrap { height: 44px; display: flex; align-items: center; justify-content: center; position: relative; }
+  .navbar .small-title { font-size: 17px; font-weight: 600; opacity: 0; transition: opacity .2s; }
+  .navbar.scrolled .small-title { opacity: 1; }
 
-  /* 책 한 권. 표지는 아래쪽을 맞춰 선반에 꽂힌 것처럼 */
-  .book { background: none; border: 0; padding: 0; cursor: pointer; text-align: center; color: inherit; font: inherit; }
-  .book img { width: 100%; display: block; box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 8px 18px rgba(0,0,0,.10); transition: transform .15s; }
-  .book:hover img, .book:focus-visible img { transform: translateY(-4px); }
-  .marks { height: 22px; margin-top: 8px; font-size: 14px; color: var(--accent); }
+  /* 큰 제목 */
+  header .wrap { padding-top: 4px; padding-bottom: 6px; }
+  h1 { font-size: 34px; font-weight: 700; letter-spacing: -0.02em; margin: 0; line-height: 1.15; }
+  .owner { color: var(--muted); margin: 4px 0 0; font-size: 15px; }
+
+  /* 세그먼트 컨트롤 (표지 / 목록, 전체 / 추천) */
+  .controls { display: flex; gap: 10px; flex-wrap: wrap; margin: 16px 0 4px; }
+  .seg { display: inline-flex; background: rgba(118,118,128,.12); border-radius: 9px; padding: 2px; flex: 1 1 200px; max-width: 320px; }
+  .seg button { flex: 1; border: 0; background: none; border-radius: 7px; padding: 6px 10px; font-size: 13px; font-weight: 500; cursor: pointer; transition: background .2s, box-shadow .2s; }
+  .seg button[aria-pressed="true"] { background: var(--card); font-weight: 600; box-shadow: 0 3px 8px rgba(0,0,0,.12), 0 3px 1px rgba(0,0,0,.04); }
+  @media (prefers-color-scheme: dark) { .seg { background: rgba(118,118,128,.24); } .seg button[aria-pressed="true"] { background: #636366; } }
+
+  main .wrap { padding-bottom: 40px; }
+
+  /* 섹션 (연도별). 아이폰 설정 앱의 묶음 목록처럼 */
+  .section { margin-top: 26px; }
+  .section h2 { font-size: 13px; font-weight: 400; color: var(--muted); text-transform: uppercase; margin: 0 0 7px 16px; letter-spacing: 0; }
+  .card { background: var(--card); border-radius: var(--radius); overflow: hidden; }
+
+  /* 표지 보기 */
+  .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(var(--cover-w), 1fr)); gap: 22px 16px; padding: 18px 16px 16px; align-items: end; }
+  .book { background: none; border: 0; padding: 0; cursor: pointer; text-align: left; transition: transform .15s ease; }
+  .book:active { transform: scale(.96); }
+  .book .cv { position: relative; }
+  .book img, .book .nocover { width: 100%; display: block; border-radius: 8px; box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 6px 16px rgba(0,0,0,.12); }
+  .book .t { font-size: 13px; font-weight: 500; margin-top: 8px; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .book .a { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .badge { position: absolute; top: 6px; right: 6px; width: 24px; height: 24px; border-radius: 50%; display: grid; place-items: center; background: rgba(255,255,255,.85); color: var(--heart); font-size: 13px; -webkit-backdrop-filter: blur(8px); backdrop-filter: blur(8px); box-shadow: 0 1px 3px rgba(0,0,0,.15); }
   /* 표지가 없는 책은 제목 카드로 */
-  .nocover { aspect-ratio: 2 / 3; display: flex; flex-direction: column; justify-content: center; gap: 8px; padding: 14px; background: var(--card); border: 1px solid var(--line); text-align: left; }
-  .nocover b { font-size: 15px; line-height: 1.35; }
-  .nocover span { font-size: 12px; color: var(--muted); }
+  .nocover { aspect-ratio: 2 / 3; display: flex; flex-direction: column; justify-content: flex-end; gap: 6px; padding: 12px; background: linear-gradient(160deg, #5e5ce6, #007aff); color: #fff; text-align: left; }
+  .nocover b { font-size: 14px; line-height: 1.3; }
+  .nocover span { font-size: 11.5px; opacity: .85; }
 
-  /* 책 상세 */
-  dialog { border: 0; border-radius: 10px; padding: 0; width: min(760px, calc(100% - 32px)); background: var(--card); color: var(--ink); }
-  dialog::backdrop { background: rgba(20,20,18,.45); }
-  .detail { display: grid; grid-template-columns: 220px 1fr; gap: 28px; padding: 28px; }
-  .detail img { width: 100%; box-shadow: 0 8px 20px rgba(0,0,0,.15); }
-  .detail h3 { font-size: 22px; margin: 0 0 6px; line-height: 1.3; }
-  .meta { color: var(--muted); font-size: 14px; line-height: 1.7; }
-  .review { margin-top: 18px; font-size: 15.5px; line-height: 1.7; }
-  .quote { margin-top: 14px; padding-left: 14px; border-left: 2px solid var(--accent); font-style: italic; line-height: 1.7; }
-  .detail a { color: var(--accent); font-size: 14px; display: inline-block; margin-top: 18px; }
-  .close { position: absolute; top: 10px; right: 14px; border: 0; background: none; font-size: 26px; color: var(--muted); cursor: pointer; }
-  @media (max-width: 600px) {
-    :root { --cover-w: 104px; }
-    .grid { gap: 26px 14px; }
-    .detail { grid-template-columns: 1fr; }
-    .detail img { width: 150px; }
+  /* 목록 보기 (아이폰 설정 앱 줄) */
+  .row { display: flex; align-items: center; gap: 12px; width: 100%; padding: 10px 16px; border: 0; background: none; cursor: pointer; text-align: left; position: relative; }
+  .row:active { background: var(--card-2); }
+  .row + .row::before { content: ""; position: absolute; top: 0; left: 76px; right: 0; border-top: .5px solid var(--line); }
+  .row .thumb { width: 48px; flex: none; }
+  .row .thumb img, .row .thumb .nocover { width: 48px; border-radius: 5px; display: block; box-shadow: 0 1px 3px rgba(0,0,0,.15); }
+  .row .thumb .nocover { padding: 4px; } .row .thumb .nocover b { font-size: 8px; } .row .thumb .nocover span { display: none; }
+  .row .txt { flex: 1; min-width: 0; }
+  .row .t { font-size: 17px; line-height: 1.3; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .row .a { font-size: 14px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
+  .row .heart { color: var(--heart); font-size: 15px; }
+  .chev { width: 8px; height: 13px; flex: none; color: rgba(60,60,67,.3); }
+  @media (prefers-color-scheme: dark) { .chev { color: rgba(235,235,245,.3); } }
+
+  /* 책 상세: 아래에서 올라오는 시트 */
+  dialog {
+    border: 0; padding: 0; margin: auto auto 0; width: 100%; max-width: 640px; max-height: 92vh; max-height: 92dvh;
+    border-radius: 14px 14px 0 0; background: var(--bg); color: var(--ink); box-shadow: var(--sheet-shadow);
+    overflow: auto; overscroll-behavior: contain;
   }
-  footer { max-width: 1240px; margin: 0 auto; padding: 24px; color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--line); }
-  footer a { color: inherit; }
-  .empty { color: var(--muted); padding: 60px 0; }
+  dialog[open] { animation: up .32s cubic-bezier(.2,.9,.3,1); }
+  dialog::backdrop { background: rgba(0,0,0,.4); }
+  dialog[open]::backdrop { animation: fade .25s ease; }
+  @keyframes up { from { transform: translateY(100%); } to { transform: none; } }
+  @keyframes fade { from { opacity: 0; } to { opacity: 1; } }
+  @media (min-width: 700px) {
+    dialog { margin: auto; border-radius: 14px; max-height: 86vh; }
+    dialog[open] { animation: pop .25s cubic-bezier(.2,.9,.3,1); }
+    @keyframes pop { from { transform: scale(.94); opacity: 0; } to { transform: none; opacity: 1; } }
+  }
+  .sheet-top { position: sticky; top: 0; z-index: 2; background: var(--sheet-bar); -webkit-backdrop-filter: saturate(180%) blur(20px); backdrop-filter: saturate(180%) blur(20px); }
+  .grabber { width: 36px; height: 5px; border-radius: 3px; background: rgba(127,127,127,.4); margin: 6px auto 0; }
+  @media (min-width: 700px) { .grabber { display: none; } }
+  .sheet-bar { height: 44px; display: flex; align-items: center; justify-content: flex-end; padding: 0 16px; }
+  .done { border: 0; background: none; color: var(--accent); font-size: 17px; font-weight: 600; cursor: pointer; padding: 8px 0; }
+  .sheet-body { padding: 4px 16px calc(28px + env(safe-area-inset-bottom)); }
+  .hero { text-align: center; }
+  .hero .cv img, .hero .cv .nocover { width: 170px; margin: 0 auto; border-radius: 10px; display: block; box-shadow: 0 12px 30px rgba(0,0,0,.25); }
+  .hero .cv .nocover { text-align: left; }
+  .hero h3 { font-size: 22px; font-weight: 700; margin: 18px 0 4px; line-height: 1.3; letter-spacing: -0.02em; }
+  .hero .by { color: var(--muted); font-size: 15px; }
+  .pill { display: inline-flex; align-items: center; gap: 4px; margin-top: 10px; padding: 4px 10px; border-radius: 99px; background: rgba(255,55,95,.12); color: var(--heart); font-size: 13px; font-weight: 600; }
+  .group { margin-top: 22px; }
+  .group h4 { font-size: 13px; font-weight: 400; color: var(--muted); margin: 0 0 7px 16px; }
+  .info { display: flex; justify-content: space-between; gap: 16px; padding: 11px 16px; font-size: 16px; position: relative; }
+  .info + .info::before { content: ""; position: absolute; top: 0; left: 16px; right: 0; border-top: .5px solid var(--line); }
+  .info span:last-child { color: var(--muted); text-align: right; }
+  .text { padding: 14px 16px; font-size: 16px; line-height: 1.6; white-space: pre-wrap; }
+  .text.q { font-style: italic; border-left: 3px solid var(--accent); margin: 12px 16px; padding: 2px 0 2px 12px; }
+  .link-btn { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; color: var(--accent); text-decoration: none; font-size: 17px; }
+  .link-btn:active { background: var(--card-2); }
+
+  footer .wrap { padding-top: 8px; padding-bottom: calc(32px + env(safe-area-inset-bottom)); color: var(--muted); font-size: 12px; text-align: center; line-height: 1.6; }
+  footer a { color: var(--accent); text-decoration: none; }
+  .empty { color: var(--muted); padding: 60px 16px; text-align: center; }
+
+  /* 폰: 아이폰 '도서' 앱처럼 한 줄에 3권 */
+  @media (max-width: 600px) {
+    :root { --cover-w: 88px; }
+    .grid { gap: 20px 12px; padding: 16px 14px 14px; }
+    .book .t { font-size: 12.5px; } .book .a { font-size: 11.5px; }
+    .badge { width: 20px; height: 20px; font-size: 11px; top: 4px; right: 4px; }
+  }
+  .done:focus:not(:focus-visible) { outline: none; }
+  dialog:focus { outline: none; }
+  @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
 </head>
 <body>
-<header>
+<nav class="navbar" id="navbar"><div class="wrap"><span class="small-title" id="smallTitle">나의 책장</span></div></nav>
+<header><div class="wrap">
   <h1 id="title">나의 책장</h1>
   <p class="owner" id="owner"></p>
-</header>
-<main id="shelf"></main>
-<dialog id="dlg"><button class="close" aria-label="닫기" onclick="document.getElementById('dlg').close()">×</button><div id="detail"></div></dialog>
-<footer>
+  <div class="controls">
+    <div class="seg" role="group" aria-label="보기 방식">
+      <button type="button" data-view="grid" aria-pressed="true">표지</button>
+      <button type="button" data-view="list" aria-pressed="false">목록</button>
+    </div>
+    <div class="seg" role="group" aria-label="고르기">
+      <button type="button" data-filter="all" aria-pressed="true">전체</button>
+      <button type="button" data-filter="fav" aria-pressed="false">♥ 추천</button>
+    </div>
+  </div>
+</div></header>
+<main><div class="wrap" id="shelf"></div></main>
+<dialog id="dlg" aria-label="책 정보" tabindex="-1">
+  <div class="sheet-top"><div class="grabber"></div><div class="sheet-bar"><button class="done" type="button" onclick="document.getElementById('dlg').close()">완료</button></div></div>
+  <div class="sheet-body" id="detail"></div>
+</dialog>
+<footer><div class="wrap">
   <!-- YES24 API 이용 조건. 화면에 출처를 표시하고 상품 페이지로 가는 링크를 둔다. 지우지 말 것 -->
-  도서 정보와 표지 제공 <a href="https://www.yes24.com" target="_blank" rel="noopener">YES24</a> · <span id="updated"></span>
-</footer>
+  도서 정보와 표지 제공 <a href="https://www.yes24.com" target="_blank" rel="noopener">YES24</a><br><span id="updated"></span>
+</div></footer>
 <script>
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 // YES24 표지 주소 끝의 크기 글자를 바꾼다. 목록은 L, 크게 볼 때는 XL
 const sized = (url, size) => /image\.yes24\.com\/goods\/\d+\/[A-Z]+$/.test(url || '') ? url.replace(/\/[A-Z]+$/, '/' + size) : url;
+const CHEV = '<svg class="chev" viewBox="0 0 8 13" aria-hidden="true"><path d="M1.5 1.5 6.5 6.5 1.5 11.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 let BOOKS = [];
+// 보기 방식은 방문자 브라우저에 기억해 둔다 (안 되면 그냥 기본값)
+const store = { get(k, d) { try { return localStorage.getItem(k) || d; } catch { return d; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
+const state = { view: store.get('shelf.view', 'grid'), filter: 'all' };
 
 function coverHtml(b, size) {
   return b.cover
@@ -90,23 +206,26 @@ function coverHtml(b, size) {
     : `<div class="nocover"><b>${esc(b.title)}</b><span>${esc(b.author)}</span></div>`;
 }
 
-function render(data) {
-  const shelf = data.shelf || {};
-  document.title = shelf.title || '나의 책장';
-  $('#title').textContent = shelf.title || '나의 책장';
-  $('#owner').textContent = (shelf.owner ? `책장 주인 · ${shelf.owner} · ` : '') + `${data.books.length}권`;
-  $('#updated').textContent = data.updated ? `${data.updated} 업데이트` : '';
-  BOOKS = data.books;
+function render() {
+  document.querySelectorAll('[data-view]').forEach(el => el.setAttribute('aria-pressed', el.dataset.view === state.view));
+  document.querySelectorAll('[data-filter]').forEach(el => el.setAttribute('aria-pressed', el.dataset.filter === state.filter));
+  const books = state.filter === 'fav' ? BOOKS.filter(b => b.fav) : BOOKS;
   if (!BOOKS.length) { $('#shelf').innerHTML = '<p class="empty">아직 꽂힌 책이 없어요.</p>'; return; }
+  if (!books.length) { $('#shelf').innerHTML = '<p class="empty">추천 표시(♥)한 책이 아직 없어요.</p>'; return; }
 
   // 읽은 해로 묶는다. shelf.json 이 이미 최근 순으로 정렬돼 있다
-  const years = [...new Set(BOOKS.map(b => b.year))];
+  const years = [...new Set(books.map(b => b.year))];
   $('#shelf').innerHTML = years.map(y => {
-    const list = BOOKS.filter(b => b.year === y);
-    return `<section class="year"><h2>${esc(y)} · ${list.length}권</h2><div class="grid">${
-      list.map(b => `<button class="book" data-id="${b.id}">${coverHtml(b, 'L')}
-        <div class="marks">${b.fav ? '♥' : ''}${b.review || b.quote ? ' 📝' : ''}</div></button>`).join('')
-    }</div></section>`;
+    const list = books.filter(b => b.year === y);
+    const body = state.view === 'grid'
+      ? `<div class="grid">${list.map(b => `<button class="book" data-id="${b.id}">
+          <div class="cv">${coverHtml(b, 'L')}${b.fav ? '<span class="badge" aria-label="추천">♥</span>' : ''}</div>
+          <div class="t">${esc(b.title)}</div><div class="a">${esc(b.author)}</div></button>`).join('')}</div>`
+      : list.map(b => `<button class="row" data-id="${b.id}">
+          <div class="thumb">${coverHtml(b, 'L')}</div>
+          <div class="txt"><div class="t">${esc(b.title)}</div><div class="a">${esc([b.author, b.month ? b.month + '월' : ''].filter(Boolean).join(' · '))}</div></div>
+          ${b.fav ? '<span class="heart" aria-label="추천">♥</span>' : ''}${CHEV}</button>`).join('');
+    return `<section class="section"><h2>${esc(y)}년 · ${list.length}권</h2><div class="card">${body}</div></section>`;
   }).join('');
 }
 
@@ -114,24 +233,46 @@ function openBook(id) {
   const b = BOOKS.find(x => x.id === id);
   if (!b) return;
   const when = `${b.year}년${b.month ? ' ' + b.month + '월' : ''}`;
-  $('#detail').innerHTML = `<div class="detail">
-    <div>${coverHtml(b, 'XL')}</div>
-    <div>
+  const rows = [['저자', b.author], ['출판사', b.publisher], ['읽은 때', when], ['형태', b.media], ['분류', b.category]].filter(r => r[1]);
+  $('#detail').innerHTML = `
+    <div class="hero">
+      <div class="cv">${coverHtml(b, 'XL')}</div>
       <h3>${esc(b.title)}</h3>
-      <div class="meta">${esc([b.author, b.publisher].filter(Boolean).join(' · '))}<br>${esc([when + ' 읽음', b.media, b.category].filter(Boolean).join(' · '))}${b.fav ? ' · <span style="color:var(--accent)">♥ 추천</span>' : ''}</div>
-      ${b.review ? `<p class="review">${esc(b.review)}</p>` : ''}
-      ${b.quote ? `<p class="quote">${esc(b.quote)}</p>` : ''}
-      ${b.link ? `<a href="${esc(b.link)}" target="_blank" rel="noopener">YES24에서 보기 ↗</a>` : ''}
-    </div></div>`;
+      <div class="by">${esc(b.author)}</div>
+      ${b.fav ? '<div class="pill">♥ 추천</div>' : ''}
+    </div>
+    ${b.review || b.quote ? `<div class="group"><h4>나의 기록</h4><div class="card">
+      ${b.review ? `<div class="text">${esc(b.review)}</div>` : ''}
+      ${b.quote ? `<div class="text q">${esc(b.quote)}</div>` : ''}
+    </div></div>` : ''}
+    <div class="group"><h4>정보</h4><div class="card">
+      ${rows.map(r => `<div class="info"><span>${r[0]}</span><span>${esc(r[1])}</span></div>`).join('')}
+    </div></div>
+    ${b.link ? `<div class="group"><div class="card"><a class="link-btn" href="${esc(b.link)}" target="_blank" rel="noopener"><span>YES24에서 보기</span>${CHEV}</a></div></div>` : ''}`;
   $('#dlg').showModal();
+  $('#dlg').focus();   // 시트 자체에 초점 (완료 버튼에 테두리가 생기지 않게)
+  $('#dlg').scrollTop = 0;
 }
 
-$('#shelf').addEventListener('click', e => { const el = e.target.closest('.book'); if (el) openBook(Number(el.dataset.id)); });
+$('#shelf').addEventListener('click', e => { const el = e.target.closest('[data-id]'); if (el) openBook(Number(el.dataset.id)); });
 $('#dlg').addEventListener('click', e => { if (e.target.id === 'dlg') $('#dlg').close(); });   // 바깥을 누르면 닫힘
+document.querySelectorAll('[data-view]').forEach(el => el.addEventListener('click', () => { state.view = el.dataset.view; store.set('shelf.view', state.view); render(); }));
+document.querySelectorAll('[data-filter]').forEach(el => el.addEventListener('click', () => { state.filter = el.dataset.filter; render(); }));
+
+// 스크롤하면 위쪽 바가 반투명해지고 작은 제목이 나타난다
+const onScroll = () => $('#navbar').classList.toggle('scrolled', window.scrollY > 40);
+window.addEventListener('scroll', onScroll, { passive: true }); onScroll();
 
 // 캐시 때문에 게시한 내용이 늦게 보이지 않게 매번 새로 받는다
-fetch('shelf.json?t=' + Date.now()).then(r => r.json()).then(render)
-  .catch(() => { $('#shelf').innerHTML = '<p class="empty">shelf.json 을 읽지 못했어요. 어드민에서 [게시]를 눌렀는지 확인해 주세요.</p>'; });
+fetch('shelf.json?t=' + Date.now()).then(r => r.json()).then(data => {
+  const shelf = data.shelf || {};
+  const title = shelf.title || '나의 책장';
+  document.title = title; $('#title').textContent = title; $('#smallTitle').textContent = title;
+  BOOKS = data.books || [];
+  $('#owner').textContent = (shelf.owner ? `${shelf.owner} · ` : '') + `${BOOKS.length}권`;
+  $('#updated').textContent = data.updated ? `${data.updated} 업데이트` : '';
+  render();
+}).catch(() => { $('#shelf').innerHTML = '<p class="empty">shelf.json 을 읽지 못했어요. 어드민에서 [게시]를 눌렀는지 확인해 주세요.</p>'; });
 </script>
 </body>
 </html>
