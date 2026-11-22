@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>책장 어드민</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
 <!--
   나의 책장 · 어드민 쪽 (내 컴퓨터에서만 열린다)
   책을 찾고, 꽂고, 고치고, [게시]로 사이트 파일(docs/shelf.json)을 만든다.
@@ -15,7 +16,7 @@
 <style>
   :root { --bg: #f4f2ec; --card: #fff; --ink: #1d1d1b; --muted: #8a877d; --line: #e3dfd3; --accent: #b0412e; --ok: #2f6b45; --warn: #fff4d6; }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--ink); font: 14.5px/1.5 -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14.5px/1.5 "Pretendard Variable", Pretendard, -apple-system, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif; }
   button, input, select, textarea { font: inherit; }
   .top { position: sticky; top: 0; z-index: 5; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 12px 20px; background: var(--ink); color: #fff; }
   .top h1 { font-size: 16px; margin: 0 auto 0 0; }
@@ -60,6 +61,19 @@
   .st { font-size: 11px; border-radius: 4px; padding: 0 5px; margin-left: 4px; }
   .st.reading { color: #fff; background: #007aff; }
   .st.want { color: #555; border: 1px solid #bbb; }
+  /* 빠른 편집 */
+  .item { align-items: start; padding: 10px 6px; border-bottom: 1px solid var(--line); border-radius: 0; }
+  .item .row { margin-top: 2px; }
+  .quick { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-top: 7px; }
+  .quick select, .quick input { width: auto; padding: 3px 6px; font-size: 13px; border-radius: 6px; }
+  .quick input { width: 58px; }
+  .qprog { display: inline-flex; align-items: center; gap: 3px; margin: 0; font-size: 13px; color: var(--ink); }
+  .qstars { display: inline-flex; }
+  .qs, .qfav { border: 0; background: none; padding: 0 1px; font-size: 18px; line-height: 1; cursor: pointer; color: #d9d6cc; transition: transform .1s, color .1s; }
+  .qs.on { color: #f0a500; } .qfav { font-size: 16px; margin: 0 4px; } .qfav.on { color: #ff375f; }
+  .qs:hover, .qfav:hover { transform: scale(1.2); }
+  .item.saved { animation: saved .9s ease; }
+  @keyframes saved { from { background: #2f6b4522; } to { background: transparent; } }
   .guide { line-height: 1.7; }
   .guide pre { background: #1d1d1b; color: #f4f2ec; padding: 12px 14px; border-radius: 8px; overflow-x: auto; font-size: 13px; }
   .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--ink); color: #fff; padding: 10px 18px; border-radius: 8px; opacity: 0; transition: opacity .2s; pointer-events: none; max-width: 90vw; }
@@ -170,10 +184,21 @@ async function load() {
   $('#catFilter').innerHTML = `<option value="">전체 분류 (${STATE.books.length})</option>` +
     Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([c, n]) => `<option value="${esc(c)}" ${c === catFilter ? 'selected' : ''}>${esc(c)} (${n})</option>`).join('');
   const books = [...STATE.books].filter(b => !catFilter || (b.category || '기타') === catFilter).sort((a, b) => (b.year - a.year) || ((b.month || 0) - (a.month || 0)) || (b.id - a.id));
-  $('#list').innerHTML = books.map(b => `<div class="item">
+  const thisYear = new Date().getFullYear();
+  const minYear = Math.min(thisYear - 5, ...STATE.books.map(b => Number(b.year) || thisYear));
+  const yearOpts = Array.from({ length: thisYear - minYear + 1 }, (_, i) => thisYear - i);
+  $('#list').innerHTML = books.map(b => `<div class="item" data-id="${b.id}">
       ${b.cover ? `<img src="${esc(b.cover)}" alt="">` : '<div class="ph"></div>'}
-      <div><b>${esc(b.title)}</b>${b.sample ? '<span class="sample">샘플</span>' : ''}${b.fav ? ' <span style="color:var(--accent)">♥</span>' : ''}${statusTag(b)}${b.rating ? ` <span class="stars">${'★'.repeat(b.rating)}</span>` : ''}
-        <div class="muted">${esc([b.author, `${b.year}${b.month ? '.' + b.month : ''}`, b.category].filter(Boolean).join(' · '))}</div></div>
+      <div><b>${esc(b.title)}</b>${b.sample ? '<span class="sample">샘플</span>' : ''}
+        <div class="muted">${esc([b.author, b.category].filter(Boolean).join(' · '))}</div>
+        <div class="quick">
+          <span class="qstars" title="별점 (같은 별을 다시 누르면 지워져요)">${[1, 2, 3, 4, 5].map(n => `<button type="button" class="qs${n <= (b.rating || 0) ? ' on' : ''}" data-rate="${n}" aria-label="${n}점">★</button>`).join('')}</span>
+          <button type="button" class="qfav${b.fav ? ' on' : ''}" data-fav title="♥ 추천">♥</button>
+          <select data-q="status" title="읽기 상태">${Object.entries(STATUS_LABEL).map(([k, t]) => `<option value="${k}" ${k === (b.status || 'read') ? 'selected' : ''}>${t}</option>`).join('')}</select>
+          <select data-q="year" title="읽은 해">${yearOpts.map(y => `<option ${y === Number(b.year) ? 'selected' : ''}>${y}</option>`).join('')}</select>
+          <select data-q="month" title="읽은 달"><option value="">달 모름</option>${Array.from({ length: 12 }, (_, i) => `<option value="${i + 1}" ${i + 1 === Number(b.month) ? 'selected' : ''}>${i + 1}월</option>`).join('')}</select>
+          ${b.status === 'reading' ? `<label class="qprog"><input type="number" data-q="progress" min="0" max="100" value="${b.progress || 0}">%</label>` : ''}
+        </div></div>
       <div class="row"><button class="btn small" data-edit="${b.id}">고치기</button><button class="btn small" data-del="${b.id}">빼기</button></div>
     </div>`).join('') || '<p class="muted">아직 꽂힌 책이 없어요.</p>';
 }
@@ -254,7 +279,39 @@ $('#results').onclick = e => {
   const it = found[Number(el.dataset.i)];
   showForm({ ...it, category: it.category || '기타' });   // YES24 가 알려 준 분류가 그대로 들어간다
 };
+// ── 빠른 편집: 목록에서 바로 저장. 순서가 바뀌면 헷갈리니 목록은 그 자리에 둔다 ──
+async function quick(id, patch, rerender) {
+  const item = document.querySelector(`.item[data-id="${id}"]`);
+  try {
+    const saved = await api('/api/books/' + id, { method: 'PUT', body: patch });
+    const i = STATE.books.findIndex(x => x.id === saved.id); if (i >= 0) STATE.books[i] = saved;
+    if (rerender) return load();
+    item?.classList.remove('saved'); void item?.offsetWidth; item?.classList.add('saved');
+    const st = await api('/api/books');   // 위쪽 '게시하지 않은 변경' 표시만 새로
+    $('#pubState').textContent = st.unpublished ? '게시하지 않은 변경 있음' : '게시됨';
+    $('#pubState').className = 'badge' + (st.unpublished ? ' need' : '');
+    return saved;
+  } catch (err) { toast(err.message, true); load(); }
+}
+$('#list').addEventListener('change', e => {
+  const q = e.target.dataset.q; if (!q) return;
+  const id = Number(e.target.closest('.item').dataset.id);
+  quick(id, { [q]: e.target.value }, q === 'status');   // 상태를 바꾸면 진행률 칸이 생기거나 사라지니 다시 그린다
+});
 $('#list').onclick = async e => {
+  const rate = e.target.dataset.rate, favBtn = e.target.closest('[data-fav]');
+  if (rate || favBtn) {
+    const item = e.target.closest('.item'), id = Number(item.dataset.id), b = STATE.books.find(x => x.id === id);
+    if (rate) {
+      const n = Number(rate) === (b.rating || 0) ? 0 : Number(rate);
+      item.querySelectorAll('.qs').forEach((el, k) => el.classList.toggle('on', k < n));
+      await quick(id, { rating: n });
+    } else {
+      favBtn.classList.toggle('on', !b.fav);
+      await quick(id, { fav: !b.fav });
+    }
+    return;
+  }
   const ed = e.target.dataset.edit, del = e.target.dataset.del;
   if (ed) { const b = STATE.books.find(x => x.id == ed); showForm(b, b.id); window.scrollTo({ top: 0, behavior: 'smooth' }); }
   if (del) {

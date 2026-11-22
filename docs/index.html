@@ -6,7 +6,19 @@
 <meta name="theme-color" content="#f2f2f7" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="책장">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
+<!-- 홈 화면에 추가하면 앱처럼 열린다 (아이콘·이름은 manifest.webmanifest) -->
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icons/icon-192.png">
+<!-- 글꼴: 본문 Pretendard(아이폰 글꼴과 닮은 한글 글꼴), 제목 Noto Serif KR(애플 '도서' 앱 같은 명조) -->
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/pretendard@1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@600;700&display=swap">
 <title>나의 책장</title>
 <!--
   나의 책장 · 사이트 쪽 (아이폰 UI 스타일)
@@ -318,6 +330,81 @@
   .done:focus:not(:focus-visible) { outline: none; }
   dialog:focus { outline: none; }
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+
+  /* ───────── 디자인 다듬기: 글꼴, 제목 위계, 선반 입체감, 표지 색 상세 ───────── */
+  :root {
+    --sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+    --serif: "Noto Serif KR", ui-serif, "AppleMyungjo", "Batang", serif;   /* 큰 제목·책 제목 */
+  }
+  body { font-family: var(--sans); letter-spacing: -0.012em; font-feature-settings: "tnum" 0; }
+  h1 { font-family: var(--serif); font-weight: 700; font-size: 36px; letter-spacing: -0.035em; line-height: 1.2; }
+  .navbar .small-title { font-family: var(--serif); font-weight: 600; letter-spacing: -0.02em; }
+  .owner { font-size: 15px; margin-top: 6px; }
+
+  /* 섹션 제목: 작은 회색 글씨 → 굵고 큰 제목 + 흐린 권수 (앱스토어처럼) */
+  .section { margin-top: 34px; }
+  .section h2, .cal-head h2 { font-size: 21px; font-weight: 700; color: var(--ink); text-transform: none; letter-spacing: -0.025em; margin: 0 0 12px 2px; }
+  .section h2 span, .cal-head h2 span { color: var(--muted); font-weight: 500; font-size: 16px; margin-left: 7px; letter-spacing: 0; }
+  .cal-head { margin: 0 0 12px 2px; }
+
+  /* 독서 현황 */
+  .stats { padding: 20px; }
+  .ring .num b { font-size: 30px; font-weight: 800; font-variant-numeric: tabular-nums; letter-spacing: -0.04em; }
+  .ring .fill { stroke: url(#ringGrad); }
+  .stats-txt h3 { font-family: var(--serif); font-size: 19px; font-weight: 700; letter-spacing: -0.02em; margin-bottom: 4px; }
+  .card { box-shadow: 0 1px 2px rgba(0,0,0,.03), 0 4px 16px rgba(0,0,0,.04); }
+  @media (prefers-color-scheme: dark) { .card { box-shadow: none; } }
+
+  /* 결산 버튼: 은은한 빛 */
+  .wrapped-cta { position: relative; overflow: hidden; }
+  .wrapped-cta::after { content: ""; position: absolute; inset: 0; background: radial-gradient(circle at 85% 0%, rgba(255,255,255,.35), transparent 45%); pointer-events: none; }
+  .wrapped-cta b { font-family: var(--serif); letter-spacing: -0.02em; }
+
+  /* 책장: 위에서 비추는 조명, 안쪽 그림자, 결이 있는 선반 */
+  .bookcase { background:
+      linear-gradient(180deg, rgba(255,255,255,.55), rgba(255,255,255,0) 45%),
+      var(--shelf-back);
+    box-shadow: inset 0 12px 24px -14px rgba(60,40,20,.25), inset 10px 0 18px -16px rgba(60,40,20,.25), inset -10px 0 18px -16px rgba(60,40,20,.25), inset 0 0 0 .5px var(--line); }
+  @media (prefers-color-scheme: dark) {
+    .bookcase { background: linear-gradient(180deg, rgba(255,255,255,.05), rgba(255,255,255,0) 45%), var(--shelf-back);
+      box-shadow: inset 0 12px 24px -14px rgba(0,0,0,.8), inset 0 0 0 .5px var(--line); }
+  }
+  .shelf { position: relative; z-index: 0;   /* 책이 선반 위에 드리우는 그림자를 선반보다 위에 그리기 위해 */
+    background: repeating-linear-gradient(to bottom,
+      rgba(0,0,0,.08) 0, transparent 10px,
+      transparent calc(var(--row-h) - var(--plank)),
+      var(--wood-top) calc(var(--row-h) - var(--plank)),
+      var(--wood-top) calc(var(--row-h) - var(--plank) + 5px),
+      rgba(255,255,255,.55) calc(var(--row-h) - var(--plank) + 5px),          /* 모서리 빛 */
+      rgba(255,255,255,.55) calc(var(--row-h) - var(--plank) + 6px),
+      var(--wood-front) calc(var(--row-h) - var(--plank) + 6px),               /* 앞면: 위가 밝고 아래가 어둡게 */
+      var(--wood-edge) calc(var(--row-h) - 2px),
+      rgba(0,0,0,.35) calc(var(--row-h) - 2px), rgba(0,0,0,.35) var(--row-h)); }
+  .slot .book { transition: transform .25s cubic-bezier(.3,.7,.2,1); }
+  .slot .book::before { content: ""; position: absolute; left: 4%; right: -6%; bottom: -4px; height: 10px; z-index: -1;
+    background: radial-gradient(ellipse at 45% 50%, rgba(40,25,10,.45), transparent 70%); filter: blur(2px); }   /* 선반에 닿는 그림자 */
+  .slot .book::after { left: 0; right: 0; width: auto; border-radius: 2px 4px 4px 2px;
+    background: linear-gradient(90deg, rgba(0,0,0,.22) 0, rgba(255,255,255,.28) 3px, rgba(255,255,255,.06) 9px, transparent 20%, transparent 88%, rgba(0,0,0,.08)),
+                linear-gradient(180deg, rgba(255,255,255,.18), transparent 22%); }   /* 책등 접힘 + 위쪽 광택 */
+  .slot .book:hover { transform: translateY(-8px) rotate(-1deg); }
+
+  /* 달력 */
+  .mh b { font-family: var(--serif); font-size: 15px; letter-spacing: -0.02em; }
+
+  /* 상세 시트: 책 제목은 명조, 배경은 표지 색으로 은은하게 */
+  .hero h3 { font-family: var(--serif); font-size: 25px; letter-spacing: -0.035em; line-height: 1.35; margin-top: 22px; }
+  .hero .by { font-size: 15.5px; }
+  .hero .cv img, .hero .cv .nocover { box-shadow: 0 18px 40px rgba(0,0,0,.28), 0 2px 6px rgba(0,0,0,.12); border-radius: 6px; }
+  dialog.tinted { --t: var(--tint-l); --tb: var(--tint-lb);
+    background: linear-gradient(180deg, var(--t) 0, var(--t) 140px, var(--bg) 620px) local, var(--bg); }
+  @media (prefers-color-scheme: dark) { dialog.tinted { --t: var(--tint-d); --tb: var(--tint-db); } }
+  dialog.tinted .sheet-top { background: var(--tb); }
+  dialog.tinted .hero .by { color: color-mix(in srgb, var(--ink) 60%, var(--t)); }
+  .group h4 { font-size: 13px; letter-spacing: .02em; }
+
+  /* 탭 바 글자 */
+  .tabbar button { font-size: 10.5px; font-weight: 600; letter-spacing: 0; }
+  @media (max-width: 600px) { h1 { font-size: 32px; } .section h2, .cal-head h2 { font-size: 20px; } }
 </style>
 </head>
 <body>
@@ -394,7 +481,7 @@ function statsHtml() {
   return `<section class="section"><h2>올해 독서 현황</h2><div class="card stats">
     <div class="stats-top">
       <div class="ring" role="img" aria-label="${GOAL ? `목표 ${GOAL}권 중 ${done.length}권` : `${done.length}권 읽음`}">
-        <svg viewBox="0 0 100 100"><circle class="track" cx="50" cy="50" r="42" fill="none" stroke-width="11"/>
+        <svg viewBox="0 0 100 100"><defs><linearGradient id="ringGrad" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0a84ff"/><stop offset="1" stop-color="#bf5af2"/></linearGradient></defs><circle class="track" cx="50" cy="50" r="42" fill="none" stroke-width="11"/>
         <circle class="fill" cx="50" cy="50" r="42" fill="none" stroke-width="11" stroke-linecap="round"
           stroke-dasharray="${C}" stroke-dashoffset="${C}" data-off="${C * (1 - ratio)}" style="${ratio ? '' : 'display:none'}"/></svg>
         <div class="num"><b>${done.length}</b><span>${GOAL ? '/ ' + GOAL + '권' : '권'}</span></div>
@@ -426,12 +513,12 @@ function render() {
   let html = fav || state.cat ? '' : statsHtml() + wrappedCtaHtml();
 
   // 읽는 중 · 읽고 싶은 책 · 다 읽은 책(해마다) 을 각각 한 칸의 책장으로
-  if (reading.length) html += `<section class="section"><h2>읽는 중 · ${reading.length}권</h2>${shelfHtml(reading)}</section>`;
-  if (want.length) html += `<section class="section"><h2>읽고 싶은 책 · ${want.length}권</h2>${shelfHtml(want)}</section>`;
+  if (reading.length) html += `<section class="section"><h2>읽는 중<span>${reading.length}권</span></h2>${shelfHtml(reading)}</section>`;
+  if (want.length) html += `<section class="section"><h2>읽고 싶은 책<span>${want.length}권</span></h2>${shelfHtml(want)}</section>`;
   const years = [...new Set(done.map(b => b.year))];   // shelf.json 이 이미 최근 순으로 정렬돼 있다
   html += years.map(y => {
     const list = done.filter(b => b.year === y);
-    return `<section class="section"><h2>${esc(y)}년 · ${list.length}권</h2>${shelfHtml(list)}</section>`;
+    return `<section class="section"><h2>${esc(y)}년에 읽은 책<span>${list.length}권</span></h2>${shelfHtml(list)}</section>`;
   }).join('');
   if (!reading.length && !want.length && !done.length) html = `<p class="empty">${fav ? '이 분류에 추천 표시(♥)한 책이 아직 없어요.' : '이 분류의 책이 없어요.'}</p>`;
   $('#shelf').innerHTML = html;
@@ -480,7 +567,48 @@ function openBook(id, src) {
   const heroImg = $('#detail .hero .cv img');
   const ratio = src && src.naturalWidth ? src.naturalHeight / src.naturalWidth : 1.45;
   if (heroImg) heroImg.style.aspectRatio = `1 / ${ratio}`;
+  applyTint(b);
   pullOut(src, heroImg);
+}
+
+// ── 표지 색 상세 화면: 표지에서 대표 색을 뽑아 시트 배경을 물들인다 ──
+const TINTS = {};
+async function coverTint(b) {
+  if (b.id in TINTS) return TINTS[b.id];
+  let t = null;
+  try {
+    const im = b.cover ? await loadImg(sized(b.cover, 'L')) : null;
+    if (im) {
+      const cv = document.createElement('canvas'); cv.width = 24; cv.height = 36;
+      const c = cv.getContext('2d', { willReadFrequently: true }); c.drawImage(im, 0, 0, 24, 36);
+      const px = c.getImageData(0, 0, 24, 36).data;
+      let r = 0, g = 0, bl = 0, w = 0;
+      for (let i = 0; i < px.length; i += 4) {
+        const R = px[i], G = px[i + 1], B = px[i + 2], mx = Math.max(R, G, B), mn = Math.min(R, G, B);
+        if (mx < 28 || mn > 238) continue;                       // 거의 검정·흰색은 빼고
+        const wt = .15 + (mx - mn) / mx;                           // 채도 높은 색에 힘을 더 준다
+        r += R * wt; g += G * wt; bl += B * wt; w += wt;
+      }
+      if (w) {
+        r /= w; g /= w; bl /= w;
+        const mx = Math.max(r, g, bl) / 255, mn = Math.min(r, g, bl) / 255, l = (mx + mn) / 2, d = mx - mn;
+        let h = 0, sat = d ? d / (1 - Math.abs(2 * l - 1)) : 0;
+        if (d) { const R = r / 255, G = g / 255, B = bl / 255; h = mx === R ? ((G - B) / d) % 6 : mx === G ? (B - R) / d + 2 : (R - G) / d + 4; h = Math.round(h * 60 + 360) % 360; }
+        const sl = Math.min(sat, .6), sd = Math.min(sat, .45);
+        t = { l: `hsl(${h} ${Math.round(sl * 100)}% 88%)`, lb: `hsl(${h} ${Math.round(sl * 100)}% 88% / .86)`,
+              d: `hsl(${h} ${Math.round(sd * 100)}% 17%)`, db: `hsl(${h} ${Math.round(sd * 100)}% 17% / .86)` };
+      }
+    }
+  } catch (e) { t = null; }   // 색을 못 뽑으면 그냥 기본 배경
+  return (TINTS[b.id] = t);
+}
+async function applyTint(b) {
+  const d = $('#dlg'); d.classList.remove('tinted');
+  const t = await coverTint(b);
+  if (!t || MODE !== 'book' || $('#detail .hero h3')?.textContent !== b.title) return;
+  d.style.setProperty('--tint-l', t.l); d.style.setProperty('--tint-lb', t.lb);
+  d.style.setProperty('--tint-d', t.d); d.style.setProperty('--tint-db', t.db);
+  d.classList.add('tinted');
 }
 
 // ── C. 책 꺼내기 ──
@@ -556,7 +684,7 @@ function calendarHtml() {
         `<button class="mbook" data-id="${b.id}" style="--i:${k}" title="${esc(b.title)}" aria-label="${esc(b.title)}">${coverHtml(b, 'L')}</button>`).join('')
         + (list.length > 3 ? `<span class="more">+${list.length - 3}</span>` : '') : (future ? '' : '<span class="mempty"></span>')}</div></div>`;
   }).join('');
-  return `<section class="section"><div class="cal-head"><h2>${y}년 · ${inYear.length}권</h2>${years.length > 1
+  return `<section class="section"><div class="cal-head"><h2>${y}년<span>${inYear.length}권</span></h2>${years.length > 1
       ? `<div class="years">${years.map(v => `<button type="button" data-year="${v}" aria-pressed="${v === y}">${v}</button>`).join('')}</div>` : ''}</div>
     <div class="cal">${tiles}</div>${unknown ? `<p class="cal-note">읽은 달을 적지 않은 책 ${unknown}권은 달력에 없어요.</p>` : ''}</section>`;
 }
@@ -573,7 +701,10 @@ function fit(ctx, text, max) { text = String(text); if (ctx.measureText(text).wi
 const loadImg = url => new Promise(res => { const im = new Image(); im.crossOrigin = 'anonymous'; im.onload = () => res(im); im.onerror = () => res(null); im.src = url; });
 async function drawWrapped() {
   const W = 1080, H = 1350, y = new Date().getFullYear();
-  const F = '-apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Pretendard", "Malgun Gothic", sans-serif';
+  const F = '"Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", sans-serif';
+  const FS = '"Noto Serif KR", ui-serif, "AppleMyungjo", serif';
+  // 캔버스는 글꼴이 다 받아진 뒤에 그려야 새 글꼴로 나온다
+  try { await Promise.all([document.fonts.load(`800 120px "Pretendard Variable"`, '0123456789권%·'), document.fonts.load(`700 76px "Noto Serif KR"`, `${y} 나의 독서`)]); } catch (e) {}
   const done = BOOKS.filter(b => isRead(b) && Number(b.year) === y);
   const reading = BOOKS.filter(b => b.status === 'reading');
   const count = (list, key) => { const c = {}; list.forEach(b => { const k = key(b); if (k) c[k] = (c[k] || 0) + 1; }); return Object.entries(c).sort((a, b) => b[1] - a[1])[0]; };
@@ -590,7 +721,7 @@ async function drawWrapped() {
   c.fillStyle = glow; c.fillRect(0, 0, W, H);
   c.fillStyle = '#fff'; c.textBaseline = 'alphabetic';
   c.font = `600 30px ${F}`; c.globalAlpha = .75; c.fillText(`MY READING ${y}`, 80, 120); c.globalAlpha = 1;
-  c.font = `800 76px ${F}`; c.fillText(`${y} 나의 독서`, 80, 210);
+  c.font = `700 76px ${FS}`; c.fillText(`${y} 나의 독서`, 80, 212);
   // 큰 숫자
   c.font = `800 250px ${F}`; c.fillText(String(done.length), 72, 470);
   const nw = c.measureText(String(done.length)).width;
@@ -631,7 +762,7 @@ async function drawWrapped() {
   return cv;
 }
 async function openWrapped() {
-  MODE = 'wrapped'; SRC = null;
+  MODE = 'wrapped'; SRC = null; $('#dlg').classList.remove('tinted');
   const y = new Date().getFullYear();
   $('#detail').innerHTML = `<div class="wrap-card"><div class="loading">카드를 만드는 중…</div></div>`;
   showSheet(false);
