@@ -240,6 +240,17 @@
     .chip { font-size: 9.5px; left: 4px; bottom: 5px; padding: 1px 5px; }
   }
 
+
+  /* 분류별로 보기: 가로로 넘기는 칩 */
+  .chips { display: flex; gap: 8px; overflow-x: auto; margin: 12px -16px 0; padding: 2px 16px; scrollbar-width: none; }
+  .chips::-webkit-scrollbar { display: none; }
+  .chips button { flex: none; border: 0; border-radius: 99px; padding: 6px 13px; font-size: 14px; font-weight: 500; cursor: pointer;
+    background: var(--card); color: var(--ink); box-shadow: inset 0 0 0 .5px var(--line); transition: background .15s, color .15s; }
+  .chips button span { color: var(--muted); margin-left: 3px; font-weight: 400; }
+  .chips button[aria-pressed="true"] { background: var(--accent); color: #fff; box-shadow: none; }
+  .chips button[aria-pressed="true"] span { color: rgba(255,255,255,.8); }
+  .chips:empty { display: none; }
+
   footer .wrap { padding-top: 8px; padding-bottom: calc(32px + env(safe-area-inset-bottom)); color: var(--muted); font-size: 12px; text-align: center; line-height: 1.6; }
   footer a { color: var(--accent); text-decoration: none; }
   .empty { color: var(--muted); padding: 60px 16px; text-align: center; }
@@ -267,6 +278,7 @@
       <button type="button" data-filter="fav" aria-pressed="false">♥ 추천</button>
     </div>
   </div>
+  <div class="chips" id="chips" role="group" aria-label="분류"></div>
 </div></header>
 <main><div class="wrap" id="shelf"></div></main>
 <dialog id="dlg" aria-label="책 정보" tabindex="-1">
@@ -289,7 +301,7 @@ const isRead = b => !b.status || b.status === 'read';
 const starsHtml = n => n ? `<span class="stars" aria-label="별점 ${n}점">${'★'.repeat(n)}<span class="off">${'★'.repeat(5 - n)}</span></span>` : '';
 // 보기 방식은 방문자 브라우저에 기억해 둔다 (안 되면 그냥 기본값)
 const store = { get(k, d) { try { return localStorage.getItem(k) || d; } catch { return d; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
-const state = { filter: 'all' };
+const state = { filter: 'all', cat: '' };   // cat: 고른 분류. 빈 값이면 전체
 
 function coverHtml(b, size) {
   return b.cover
@@ -345,12 +357,13 @@ function statsHtml() {
 function render() {
   document.querySelectorAll('[data-filter]').forEach(el => el.setAttribute('aria-pressed', el.dataset.filter === state.filter));
   if (!BOOKS.length) { $('#shelf').innerHTML = '<p class="empty">아직 꽂힌 책이 없어요.</p>'; return; }
+  renderChips();
   const fav = state.filter === 'fav';
-  const pick = list => fav ? list.filter(b => b.fav) : list;
+  const pick = list => list.filter(b => (!fav || b.fav) && (!state.cat || (b.category || '기타') === state.cat));
   const reading = pick(BOOKS.filter(b => b.status === 'reading'));
   const want = pick(BOOKS.filter(b => b.status === 'want'));
   const done = pick(BOOKS.filter(isRead));
-  let html = fav ? '' : statsHtml();
+  let html = fav || state.cat ? '' : statsHtml();   // 고른 게 있으면 독서 현황은 숨긴다
 
   // 읽는 중 · 읽고 싶은 책 · 다 읽은 책(해마다) 을 각각 한 칸의 책장으로
   if (reading.length) html += `<section class="section"><h2>읽는 중 · ${reading.length}권</h2>${shelfHtml(reading)}</section>`;
@@ -360,11 +373,21 @@ function render() {
     const list = done.filter(b => b.year === y);
     return `<section class="section"><h2>${esc(y)}년 · ${list.length}권</h2>${shelfHtml(list)}</section>`;
   }).join('');
-  if (fav && !reading.length && !want.length && !done.length) html = '<p class="empty">추천 표시(♥)한 책이 아직 없어요.</p>';
+  if (!reading.length && !want.length && !done.length) html = `<p class="empty">${fav ? '이 분류에 추천 표시(♥)한 책이 아직 없어요.' : '이 분류의 책이 없어요.'}</p>`;
   $('#shelf').innerHTML = html;
 
   // 링은 그려진 뒤 채운다 (애니메이션)
   requestAnimationFrame(() => document.querySelectorAll('.ring .fill').forEach(c => c.style.strokeDashoffset = c.dataset.off));
+}
+
+// 분류 칩: 실제 쓰인 분류만, 권수 많은 순. 분류가 하나뿐이면 숨긴다
+function renderChips() {
+  const counts = {}; BOOKS.forEach(b => { const c = b.category || '기타'; counts[c] = (counts[c] || 0) + 1; });
+  const cats = Object.entries(counts).sort((a, b) => b[1] - a[1]);
+  if (state.cat && !counts[state.cat]) state.cat = '';
+  $('#chips').innerHTML = cats.length < 2 ? '' :
+    [['', BOOKS.length, '전체'], ...cats.map(([c, n]) => [c, n, c])].map(([c, n, label]) =>
+      `<button type="button" data-cat="${esc(c)}" aria-pressed="${c === state.cat}">${esc(label)}<span>${n}</span></button>`).join('');
 }
 
 // 막대에 손가락·마우스를 올리면 'N월 · N권'
@@ -411,6 +434,7 @@ function openBook(id) {
 
 $('#shelf').addEventListener('click', e => { const el = e.target.closest('[data-id]'); if (el) openBook(Number(el.dataset.id)); });
 $('#dlg').addEventListener('click', e => { if (e.target.id === 'dlg') $('#dlg').close(); });   // 바깥을 누르면 닫힘
+$('#chips').addEventListener('click', e => { const el = e.target.closest('[data-cat]'); if (el) { state.cat = el.dataset.cat; render(); } });
 document.querySelectorAll('[data-filter]').forEach(el => el.addEventListener('click', () => { state.filter = el.dataset.filter; render(); }));
 
 $('#shelf').addEventListener('pointerover', e => { const b = e.target.closest('.bar'); if (b) showTip(b); });

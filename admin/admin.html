@@ -109,6 +109,10 @@
       <input type="number" id="shelfGoal" placeholder="올해 목표 권수" min="0" max="999" style="flex:1" title="사이트 맨 위 '올해 독서 현황' 링에 쓰여요">
       <button class="btn small" id="saveShelf">저장</button>
     </div>
+    <div class="row" style="margin-bottom:10px">
+      <select id="catFilter" style="flex:1" title="분류별로 보기"></select>
+      <button class="btn small" id="refreshCats" title="YES24 에서 온 책의 분류를 YES24 기준으로 다시 받아 와요">YES24 분류로 맞추기</button>
+    </div>
     <div class="list" id="list"></div>
   </section>
 
@@ -132,7 +136,8 @@ const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 let STATE = { books: [], categories: [] };
 let found = [];          // 마지막 검색 결과
-let editing = null;      // 고치는 중인 책 번호. null 이면 새로 꽂기
+let editing = null;
+let catFilter = '';     // 목록에서 고른 분류. 빈 값이면 전체      // 고치는 중인 책 번호. null 이면 새로 꽂기
 
 function toast(msg, err) {
   const t = $('#toast'); t.textContent = msg; t.className = 'toast show' + (err ? ' err' : '');
@@ -159,7 +164,12 @@ async function load() {
   $('#pubState').className = 'badge' + (STATE.unpublished ? ' need' : '');
   $('#count').textContent = STATE.books.length + '권';
   $('#shelfTitle').value = STATE.shelf?.title || ''; $('#shelfOwner').value = STATE.shelf?.owner || ''; $('#shelfGoal').value = STATE.shelf?.goal || '';
-  const books = [...STATE.books].sort((a, b) => (b.year - a.year) || ((b.month || 0) - (a.month || 0)) || (b.id - a.id));
+  // 분류별로 보기: 실제로 쓰인 분류만, 권수와 함께
+  const counts = {}; STATE.books.forEach(b => { const c = b.category || '기타'; counts[c] = (counts[c] || 0) + 1; });
+  if (catFilter && !counts[catFilter]) catFilter = '';
+  $('#catFilter').innerHTML = `<option value="">전체 분류 (${STATE.books.length})</option>` +
+    Object.entries(counts).sort((a, b) => b[1] - a[1]).map(([c, n]) => `<option value="${esc(c)}" ${c === catFilter ? 'selected' : ''}>${esc(c)} (${n})</option>`).join('');
+  const books = [...STATE.books].filter(b => !catFilter || (b.category || '기타') === catFilter).sort((a, b) => (b.year - a.year) || ((b.month || 0) - (a.month || 0)) || (b.id - a.id));
   $('#list').innerHTML = books.map(b => `<div class="item">
       ${b.cover ? `<img src="${esc(b.cover)}" alt="">` : '<div class="ph"></div>'}
       <div><b>${esc(b.title)}</b>${b.sample ? '<span class="sample">샘플</span>' : ''}${b.fav ? ' <span style="color:var(--accent)">♥</span>' : ''}${statusTag(b)}${b.rating ? ` <span class="stars">${'★'.repeat(b.rating)}</span>` : ''}
@@ -198,7 +208,7 @@ function showForm(book, id = null) {
       <div class="grid2">
         <div><label>읽은 해</label><input type="number" id="f_year" value="${esc(b.year)}"></div>
         <div><label>읽은 달</label><input type="number" id="f_month" min="0" max="12" value="${esc(b.month || '')}" placeholder="모름"></div>
-        <div><label>분류</label><select id="f_category">${STATE.categories.map(c => `<option ${c === b.category ? 'selected' : ''}>${c}</option>`).join('')}</select></div>
+        <div><label>분류</label><select id="f_category">${[...new Set([...(b.category ? [b.category] : []), ...STATE.categories])].map(c => `<option ${c === (b.category || '기타') ? 'selected' : ''}>${esc(c)}</option>`).join('')}</select></div>
       </div>
       <div class="grid2">
         <div><label>읽기 상태</label><select id="f_status">${Object.entries(STATUS_LABEL).map(([k, t]) => `<option value="${k}" ${k === (b.status || 'read') ? 'selected' : ''}>${t}</option>`).join('')}</select></div>
@@ -242,7 +252,7 @@ $('#results').onclick = e => {
   const el = e.target.closest('.result'); if (!el) return;
   document.querySelectorAll('.result').forEach(r => r.classList.toggle('on', r === el));
   const it = found[Number(el.dataset.i)];
-  showForm({ ...it, category: STATE.categories[0] });
+  showForm({ ...it, category: it.category || '기타' });   // YES24 가 알려 준 분류가 그대로 들어간다
 };
 $('#list').onclick = async e => {
   const ed = e.target.dataset.edit, del = e.target.dataset.del;
@@ -252,6 +262,15 @@ $('#list').onclick = async e => {
     if (!confirm(`「${b.title}」을 책장에서 뺄까요?`)) return;
     await api('/api/books/' + del, { method: 'DELETE' }); toast('뺐어요'); load();
   }
+};
+$('#catFilter').onchange = e => { catFilter = e.target.value; load(); };
+$('#refreshCats').onclick = async () => {
+  if (!confirm('YES24 에서 온 책의 분류를 YES24 기준으로 바꿀까요? 직접 적은 책은 그대로 둬요.')) return;
+  try {
+    const r = await api('/api/refresh-categories', { method: 'POST' });
+    toast(r.changed.length ? `${r.changed.length}권의 분류를 바꿨어요. [게시]를 눌러 주세요` : '모두 YES24 분류와 같아요');
+    load();
+  } catch (e) { toast(e.message, true); }
 };
 $('#saveShelf').onclick = async () => {
   await api('/api/shelf', { method: 'POST', body: { title: $('#shelfTitle').value, owner: $('#shelfOwner').value, goal: $('#shelfGoal').value } });

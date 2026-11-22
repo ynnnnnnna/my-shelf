@@ -43,7 +43,18 @@ SHELF_PATH = DOCS / "shelf.json"                   # 사이트가 읽는 파일
 ENV_PATH = ROOT / ".env"
 DEFAULT_PORT = 8799
 
-CATEGORIES = ["문학", "에세이", "인문", "사회", "과학", "실용", "기타"]
+# 분류는 YES24 국내도서 대분류 이름을 그대로 쓴다. 책을 꽂을 때 YES24 가 알려 주는 분류가 자동으로 들어간다
+CATEGORIES = ["소설/시/희곡", "에세이", "경제 경영", "자기계발", "인문", "역사", "사회 정치", "자연과학",
+              "예술", "종교", "건강 취미", "가정 살림", "여행", "IT 모바일", "만화/라이트노벨",
+              "청소년", "어린이", "국어 외국어 사전", "수험서 자격증", "기타"]
+
+
+def yes24_category(raw):
+    """ YES24 의 goodsSortNm 에서 대분류만 꺼낸다. '국내도서-경제 경영' → '경제 경영', 'eBook-문학-소설' → '문학' """
+    parts = [p.strip() for p in (raw or "").split("-")]
+    if len(parts) < 2 or parts[0] not in ("국내도서", "외국도서", "eBook") or not parts[1]:
+        return "기타"
+    return parts[1]
 
 
 # ───────────────────────────── ① 설정과 저장 ─────────────────────────────
@@ -120,6 +131,7 @@ def to_item(it):
         "publishDate": it.get("publishDate") or "",
         "cover": it.get("cover") or "",
         "link": it.get("link") or "",
+        "category": yes24_category(it.get("goodsSortNm")),
     }
 
 
@@ -184,6 +196,20 @@ def clean_book(data, old=None):
     for k in ("review", "quote", "author", "publisher", "category"):
         book[k] = (book.get(k) or "").strip()
     return book
+
+
+def refresh_categories(db):
+    """ YES24 에서 온 책들의 분류를 YES24 기준으로 다시 받아 온다. 직접 적은 책은 건드리지 않는다. """
+    changed = []
+    for b in db["books"]:
+        if not b.get("yes24Id"):
+            continue
+        items = yes24("/goods/itemDetail", {"searchType": "ITEMID", "query": b["yes24Id"]})
+        if items and items[0]["category"] != b.get("category"):
+            changed.append({"title": b["title"], "from": b.get("category"), "to": items[0]["category"]})
+            b["category"] = items[0]["category"]
+    save_db(db)
+    return changed
 
 
 def new_id(db):
@@ -274,7 +300,8 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.send_file(target)
             if u.path == "/api/books":
                 db = load_db()
-                return self.send_json({**db, "categories": CATEGORIES, "unpublished": published_differs(db),
+                cats = CATEGORIES + sorted({b.get("category") for b in db["books"] if b.get("category") and b.get("category") not in CATEGORIES})
+                return self.send_json({**db, "categories": cats, "unpublished": published_differs(db),
                                        "hasKey": bool(read_env().get("YES24_API_KEY", "").strip()) and not read_env().get("YES24_API_KEY", "").startswith("여기에")})
             if u.path == "/api/search":
                 q = urllib.parse.parse_qs(u.query).get("q", [""])[0]
@@ -302,6 +329,8 @@ class Handler(SimpleHTTPRequestHandler):
                 return self.send_json(db["shelf"])
             if u.path == "/api/publish":
                 return self.send_json({"count": publish(db)})
+            if u.path == "/api/refresh-categories":
+                return self.send_json({"changed": refresh_categories(db)})
             if u.path == "/api/clear-samples":
                 db["books"] = [b for b in db["books"] if not b.get("sample")]
                 save_db(db)
