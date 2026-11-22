@@ -41,6 +41,10 @@
   .results { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 14px; margin-top: 14px; }
   .result { border: 1px solid transparent; border-radius: 8px; padding: 6px; background: none; text-align: left; cursor: pointer; }
   .result:hover, .result.on { border-color: var(--accent); background: #b0412e0d; }
+  .result-wrap { display: flex; flex-direction: column; gap: 4px; }
+  .want-add { border: 1px solid var(--line); background: var(--card); border-radius: 99px; padding: 4px 8px; font-size: 12px; cursor: pointer; color: var(--ink); }
+  .want-add:hover { border-color: #007aff; color: #007aff; }
+  .want-have { font-size: 12px; color: var(--muted); text-align: center; padding: 4px 0; }
   .result img { width: 100%; aspect-ratio: 2/3; object-fit: cover; display: block; background: #eee; }
   .result b { display: block; font-size: 13px; margin-top: 6px; line-height: 1.3; }
   .result span { font-size: 12px; color: var(--muted); }
@@ -209,9 +213,13 @@ async function search() {
   $('#results').innerHTML = '<p class="muted">찾는 중…</p>';
   try {
     found = (await api('/api/search?q=' + encodeURIComponent(q))).items;
-    $('#results').innerHTML = found.map((it, i) => `<button class="result" data-i="${i}">
+    $('#results').innerHTML = found.map((it, i) => {
+      const have = STATE.books.find(b => b.yes24Id && b.yes24Id === it.yes24Id);
+      return `<div class="result-wrap"><button class="result" data-i="${i}">
         <img src="${esc(it.cover)}" alt=""><b>${esc(it.title)}</b>
-        <span>${esc(it.author)} · ${esc(it.publisher)}<br>${esc(it.media)} · ${esc((it.publishDate || '').slice(0, 4))}</span></button>`).join('')
+        <span>${esc(it.author)} · ${esc(it.publisher)}<br>${esc(it.media)} · ${esc((it.publishDate || '').slice(0, 4))}</span></button>
+        ${have ? `<span class="want-have">책장에 있음</span>` : `<button class="want-add" data-want="${i}" title="입력 없이 바로 '읽고 싶은 책'으로 담아요">＋ 읽고 싶은 책</button>`}</div>`;
+    }).join('')
       || '<p class="muted">찾은 책이 없어요. 제목을 짧게 줄이거나 ISBN으로 찾아 보세요.</p>';
   } catch (e) { $('#results').innerHTML = ''; toast(e.message, true); }
 }
@@ -273,7 +281,20 @@ async function saveBook(base) {
 $('#searchBtn').onclick = search;
 $('#q').onkeydown = e => { if (e.key === 'Enter') search(); };
 $('#manualBtn').onclick = e => { e.preventDefault(); showForm({ title: '', author: '', publisher: '', cover: '' }); };
+// '＋ 읽고 싶은 책': 입력 칸을 거치지 않고 바로 담는다. 담은 날이 '읽은 해·달' 칸에 들어간다
+async function addWant(it, btn) {
+  if (STATE.books.some(b => b.yes24Id && b.yes24Id === it.yes24Id)) return toast('이미 책장에 있는 책이에요');
+  btn.disabled = true;
+  try {
+    const now = new Date();
+    await api('/api/books', { method: 'POST', body: { ...it, status: 'want', year: now.getFullYear(), month: now.getMonth() + 1, category: it.category || '기타' } });
+    toast(`「${it.title}」을 읽고 싶은 책에 담았어요`);
+    await load();
+    btn.outerHTML = '<span class="want-have">담았어요 ✓</span>';
+  } catch (err) { btn.disabled = false; toast(err.message, true); }
+}
 $('#results').onclick = e => {
+  const w = e.target.closest('[data-want]'); if (w) return addWant(found[Number(w.dataset.want)], w);
   const el = e.target.closest('.result'); if (!el) return;
   document.querySelectorAll('.result').forEach(r => r.classList.toggle('on', r === el));
   const it = found[Number(el.dataset.i)];

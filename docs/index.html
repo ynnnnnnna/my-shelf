@@ -314,7 +314,7 @@
     display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px; font-size: 10.5px; font-weight: 500; }
   .tabbar svg { width: 26px; height: 26px; }
   .tabbar button[aria-selected="true"] { color: var(--accent); }
-  body.tab-calendar .controls, body.tab-calendar .chips { display: none; }
+  body.tab-sub .controls, body.tab-sub .chips { display: none; }   /* 달력·읽고 싶은 탭에서는 고르기 버튼을 숨긴다 */
 
   footer .wrap { padding-top: 8px; padding-bottom: calc(32px + env(safe-area-inset-bottom)); color: var(--muted); font-size: 12px; text-align: center; line-height: 1.6; }
   footer a { color: var(--accent); text-decoration: none; }
@@ -432,6 +432,8 @@
 <nav class="tabbar" role="tablist" aria-label="화면">
   <button type="button" role="tab" data-tab="shelf" aria-selected="true">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="3.5" width="4" height="16" rx="1"/><rect x="9.5" y="5.5" width="4" height="14" rx="1"/><path d="m15.3 6.4 3.6-.9 3.3 13.4-3.6.9z"/><path d="M2.5 20.5h19"/></svg>책장</button>
+  <button type="button" role="tab" data-tab="want" aria-selected="false">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round" aria-hidden="true"><path d="M6.5 3.5h11a1 1 0 0 1 1 1v16l-6.5-4.2-6.5 4.2v-16a1 1 0 0 1 1-1z"/><path d="M12 7.5v5M9.5 10h5" stroke-linecap="round"/></svg>읽고 싶은</button>
   <button type="button" role="tab" data-tab="calendar" aria-selected="false">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="3"/><path d="M3.5 10h17M8 3v4M16 3v4"/><circle cx="8.5" cy="14.5" r=".6" fill="currentColor"/><circle cx="12" cy="14.5" r=".6" fill="currentColor"/><circle cx="15.5" cy="14.5" r=".6" fill="currentColor"/></svg>달력</button>
 </nav>
@@ -442,13 +444,14 @@ const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt
 const sized = (url, size) => /image\.yes24\.com\/goods\/\d+\/[A-Z]+$/.test(url || '') ? url.replace(/\/[A-Z]+$/, '/' + size) : url;
 const CHEV = '<svg class="chev" viewBox="0 0 8 13" aria-hidden="true"><path d="M1.5 1.5 6.5 6.5 1.5 11.5" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>';
 let BOOKS = [];
-let SHELF_TITLE = '나의 책장';
+let SHELF_TITLE = '나의 책장', OWNER = '';
 let GOAL = 0;
 const isRead = b => !b.status || b.status === 'read';
 const starsHtml = n => n ? `<span class="stars" aria-label="별점 ${n}점">${'★'.repeat(n)}<span class="off">${'★'.repeat(5 - n)}</span></span>` : '';
 // 보기 방식은 방문자 브라우저에 기억해 둔다 (안 되면 그냥 기본값)
 const store = { get(k, d) { try { return localStorage.getItem(k) || d; } catch { return d; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
-const state = { filter: 'all', cat: '', calYear: 0, tab: location.hash === '#calendar' ? 'calendar' : 'shelf' };   // cat: 고른 분류(빈 값이면 전체), calYear: 달력에서 보는 해
+const state = { filter: 'all', cat: '', calYear: 0, tab: tabFromHash() };   // cat: 고른 분류(빈 값이면 전체), calYear: 달력에서 보는 해
+function tabFromHash() { return { '#calendar': 'calendar', '#want': 'want' }[location.hash] || 'shelf'; }
 const REDUCE = matchMedia('(prefers-reduced-motion: reduce)');
 
 function coverHtml(b, size) {
@@ -494,11 +497,21 @@ function statsHtml() {
 function render() {
   document.querySelectorAll('[data-filter]').forEach(el => el.setAttribute('aria-pressed', el.dataset.filter === state.filter));
   if (!BOOKS.length) { $('#shelf').innerHTML = '<p class="empty">아직 꽂힌 책이 없어요.</p>'; return; }
-  // 탭: 책장 / 달력
-  document.body.classList.toggle('tab-calendar', state.tab === 'calendar');
+  // 탭: 책장 / 읽고 싶은 / 달력
+  document.body.classList.toggle('tab-sub', state.tab !== 'shelf');
   document.querySelectorAll('[data-tab]').forEach(el => el.setAttribute('aria-selected', el.dataset.tab === state.tab));
-  $('#title').textContent = state.tab === 'calendar' ? '독서 달력' : SHELF_TITLE;
+  const wantAll = BOOKS.filter(b => b.status === 'want');
+  $('#title').textContent = { calendar: '독서 달력', want: '읽고 싶은 책' }[state.tab] || SHELF_TITLE;
   $('#smallTitle').textContent = $('#title').textContent;
+  $('#owner').textContent = state.tab === 'want' ? `${wantAll.length}권 담아 둠`
+    : (OWNER ? `${OWNER} · ` : '') + `읽은 책 ${BOOKS.filter(isRead).length}권`;
+  if (state.tab === 'want') {
+    // 담은 때가 최근인 책이 앞으로 (shelf.json 이 이미 최근 순)
+    $('#shelf').innerHTML = wantAll.length
+      ? `<section class="section">${shelfHtml(wantAll)}</section>`
+      : '<p class="empty">아직 담아 둔 책이 없어요.</p>';
+    return;
+  }
   if (state.tab === 'calendar') {
     $('#shelf').innerHTML = calendarHtml() || '<p class="empty">다 읽은 책이 생기면 달력에 쌓여요.</p>';
     return;
@@ -507,20 +520,18 @@ function render() {
   const fav = state.filter === 'fav';
   const pick = list => list.filter(b => (!fav || b.fav) && (!state.cat || (b.category || '기타') === state.cat));
   const reading = pick(BOOKS.filter(b => b.status === 'reading'));
-  const want = pick(BOOKS.filter(b => b.status === 'want'));
   const done = pick(BOOKS.filter(isRead));
   // 고른 게 있으면 독서 현황·결산·달력은 숨긴다
   let html = fav || state.cat ? '' : statsHtml() + wrappedCtaHtml();
 
-  // 읽는 중 · 읽고 싶은 책 · 다 읽은 책(해마다) 을 각각 한 칸의 책장으로
+  // 읽는 중 · 다 읽은 책(해마다) 을 각각 한 칸의 책장으로. 읽고 싶은 책은 따로 탭
   if (reading.length) html += `<section class="section"><h2>읽는 중<span>${reading.length}권</span></h2>${shelfHtml(reading)}</section>`;
-  if (want.length) html += `<section class="section"><h2>읽고 싶은 책<span>${want.length}권</span></h2>${shelfHtml(want)}</section>`;
   const years = [...new Set(done.map(b => b.year))];   // shelf.json 이 이미 최근 순으로 정렬돼 있다
   html += years.map(y => {
     const list = done.filter(b => b.year === y);
     return `<section class="section"><h2>${esc(y)}년에 읽은 책<span>${list.length}권</span></h2>${shelfHtml(list)}</section>`;
   }).join('');
-  if (!reading.length && !want.length && !done.length) html = `<p class="empty">${fav ? '이 분류에 추천 표시(♥)한 책이 아직 없어요.' : '이 분류의 책이 없어요.'}</p>`;
+  if (!reading.length && !done.length) html = `<p class="empty">${fav ? '이 분류에 추천 표시(♥)한 책이 아직 없어요.' : '이 분류의 책이 없어요.'}</p>`;
   $('#shelf').innerHTML = html;
 
   // 링은 그려진 뒤 채운다 (애니메이션)
@@ -787,15 +798,15 @@ $('#shelf').addEventListener('click', e => {
   const el = e.target.closest('[data-id]'); if (el) openBook(Number(el.dataset.id), el.querySelector('img, .nocover'));
 });
 $('#dlg').addEventListener('click', e => { if (e.target.id === 'dlg') closeBook(); });   // 바깥을 누르면 닫힘
-// 탭 바꾸기. 주소 끝(#calendar)에도 남겨서 뒤로 가기·공유가 되게 한다
+// 탭 바꾸기. 주소 끝(#want, #calendar)에도 남겨서 뒤로 가기·공유가 되게 한다
 function setTab(tab) {
   if (tab === state.tab) { window.scrollTo({ top: 0, behavior: REDUCE.matches ? 'auto' : 'smooth' }); return; }
   state.tab = tab;
-  history.pushState(null, '', tab === 'calendar' ? '#calendar' : location.pathname + location.search);
+  history.pushState(null, '', tab === 'shelf' ? location.pathname + location.search : '#' + tab);
   render(); window.scrollTo(0, 0);
 }
 document.querySelectorAll('[data-tab]').forEach(el => el.addEventListener('click', () => setTab(el.dataset.tab)));
-window.addEventListener('popstate', () => { state.tab = location.hash === '#calendar' ? 'calendar' : 'shelf'; render(); });
+window.addEventListener('popstate', () => { state.tab = tabFromHash(); render(); });
 $('#dlg').addEventListener('cancel', e => { e.preventDefault(); closeBook(); });          // Esc 키
 $('#chips').addEventListener('click', e => { const el = e.target.closest('[data-cat]'); if (el) { state.cat = el.dataset.cat; render(); } });
 document.querySelectorAll('[data-filter]').forEach(el => el.addEventListener('click', () => { state.filter = el.dataset.filter; render(); }));
@@ -812,7 +823,7 @@ fetch('shelf.json?t=' + Date.now()).then(r => r.json()).then(data => {
   document.title = title; SHELF_TITLE = title;
   BOOKS = data.books || [];
   GOAL = Number(shelf.goal) || 0;
-  $('#owner').textContent = (shelf.owner ? `${shelf.owner} · ` : '') + `읽은 책 ${BOOKS.filter(isRead).length}권`;
+  OWNER = shelf.owner || '';
   $('#updated').textContent = data.updated ? `${data.updated} 업데이트` : '';
   render();
 }).catch(() => { $('#shelf').innerHTML = '<p class="empty">shelf.json 을 읽지 못했어요. 어드민에서 [게시]를 눌렀는지 확인해 주세요.</p>'; });
