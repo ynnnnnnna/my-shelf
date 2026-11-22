@@ -1,0 +1,62 @@
+{
+  "shelf": {
+    "title": "나의 책장",
+    "owner": ""
+  },
+  "books": [
+    {
+      "title": "머니볼",
+      "author": "마이클 루이스",
+      "publisher": "비즈니스맵",
+      "cover": "https://image.yes24.com/goods/191479772/L",
+      "link": "https://www.yes24.com/product/goods/191479772",
+      "yes24Id": 191479772,
+      "isbn13": "9791124030028",
+      "media": "종이책",
+      "year": 2026,
+      "month": 11,
+      "category": "문학",
+      "fav": false,
+      "review": "",
+      "quote": "",
+      "id": 1,
+      "addedAt": "2026-11-22"
+    },
+    {
+      "title": "오만과 편견",
+      "author": "제인 오스틴",
+      "publisher": "민음사",
+      "cover": "https://image.yes24.com/goods/402246/L",
+      "link": "https://www.yes24.com/product/goods/402246",
+      "yes24Id": 402246,
+      "isbn13": "9788937460883",
+      "media": "종이책",
+      "year": 2026,
+      "month": 11,
+      "category": "문학",
+      "fav": false,
+      "review": "",
+      "quote": "",
+      "id": 2,
+      "addedAt": "2026-11-22"
+    },
+    {
+      "title": "세이노의 가르침",
+      "author": "세이노(SayNo)",
+      "publisher": "데이원",
+      "cover": "https://image.yes24.com/goods/117014613/L",
+      "link": "https://www.yes24.com/product/goods/117014613",
+      "yes24Id": 117014613,
+      "isbn13": "9791168473690",
+      "media": "종이책",
+      "year": 2026,
+      "month": 11,
+      "category": "문학",
+      "fav": false,
+      "review": "",
+      "quote": "",
+      "id": 3,
+      "addedAt": "2026-11-22"
+    }
+  ]
+}
